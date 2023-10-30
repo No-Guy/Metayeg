@@ -24,14 +24,13 @@ namespace WpfApp1
     /// </summary>
     public partial class MainWindow : Window
     {
-        public enum cls
-        {
-            person = 0
-        }
+        public static Dictionary<int,string> classes = new Dictionary<int,string>();
         private DispatcherTimer timer;
         public MainWindow()
         {
             InitializeComponent();
+            classes[0] = "person";
+            LoadClasses();
             NewImage();
             Opened.MouseDown += Opened_MouseDown;
             Opened.MouseUp += Opened_MouseUp;
@@ -44,8 +43,8 @@ namespace WpfApp1
         {
             public double x, y;
             public double w, h;
-            public cls c;
-            public YOLORect(double x0, double y0, double w0, double h0, cls c0 = cls.person)
+            public int c;
+            public YOLORect(double x0, double y0, double w0, double h0, int c0 = 0)
             {
                 x = x0;
                 y = y0;
@@ -70,6 +69,7 @@ namespace WpfApp1
         public int RectCount = 0;
         private int SelectedID = 0;
         public static readonly int MARGINWIDTH = 5;
+        public static int CurrentClass = 0;
         public void NewImage()
         {
             DontSaveRect();
@@ -87,7 +87,62 @@ namespace WpfApp1
 
             }
             RectImages = new List<System.Windows.Controls.Image>();
+            CurrentClass = 0;
+            if (classes.ContainsKey(CurrentClass))
+            {
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass]})";
+            }
+            else
+            {
+                Class_TextBox.Text = $"{CurrentClass}(unknown)";
+            }
             
+        }
+        public void LoadClasses()
+        {
+            string executableDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            // Path to the text file
+            string filePath = System.IO.Path.Combine(executableDirectory, "Classes.txt");
+            if (!File.Exists(filePath))
+            {
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    writer.WriteLine("person 0");
+                    writer.WriteLine("test -1");
+                    // You can write more content if needed.
+                }
+            }
+                // Read the contents of the text file
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    // Open the file for reading
+                    using (StreamReader reader = new StreamReader(filePath))
+                    {
+                        string line;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            var parts = line.Split(" ");
+                            if(parts.Length == 2)
+                            {
+                                int number;
+                                if (int.TryParse(parts[1], out number))
+                                {
+                                    classes[number] = parts[0];
+
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    
+                }
+            }
+
         }
         private void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -121,6 +176,14 @@ namespace WpfApp1
                     ProjGrid.Children.Remove(RectImages[RectImages.Count - 1]);
                     RectImages.RemoveAt(RectImages.Count - 1);
                 }
+            }
+            if(e.Key == Key.Return && Class_TextBox.IsFocused)
+            {
+                CBLF();
+                //Keyboard.ClearFocus();
+
+                // OR, set focus to the main window
+                //System.Windows.Application.Current.MainWindow.Focus();
             }
         }
         public void NextPrev(object sender, RoutedEventArgs e)
@@ -416,12 +479,11 @@ namespace WpfApp1
             double Height = ((double)Math.Abs(corner1.Item2 - corner2.Item2)) / Opened.Source.Height;
             double x = (((double)Math.Abs(corner1.Item1 + corner2.Item1)) / 2d) / Opened.Source.Width;
             double y = (((double)Math.Abs(corner1.Item2 + corner2.Item2)) / 2d) / Opened.Source.Height;
-            cls c = cls.person;
             RectCount++;
             RectImages.Add(CurrentRect);
             CurrentRect = null;
-            CreatedRectangles.Add(new YOLORect(x, y, Width, Height, c));
-            LastRect.Content = $"Last: <x: {Math.Round(x,2)},y: {Math.Round(y,2)},w: {Math.Round(Width,2)},h: {Math.Round(Height,2)}, c: {c}>";
+            CreatedRectangles.Add(new YOLORect(x, y, Width, Height, CurrentClass));
+            LastRect.Content = $"Last: <x: {Math.Round(x,2)},y: {Math.Round(y,2)},w: {Math.Round(Width,2)},h: {Math.Round(Height,2)}, c: {CurrentClass}>";
         }
         private int round(double x)
         {
@@ -430,6 +492,35 @@ namespace WpfApp1
                 return (int)x + 1;
             }
             return (int)x;
+        }
+        private void ClassBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            CBLF();
+
+
+        }
+        private void CBLF()
+        {
+            string editedText = Class_TextBox.Text;
+            int number;
+            if (int.TryParse(editedText, out number))
+            {
+                CurrentClass = number;
+                
+            }
+            if (classes.ContainsKey(CurrentClass))
+            {
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass]})";
+            }
+            else
+            {
+                Class_TextBox.Text = $"{CurrentClass}(unknown)";
+            }
+        }
+        private void ClassBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Controls.TextBox textBox = (System.Windows.Controls.TextBox)sender;
+            textBox.Text = "";
         }
         public void Export(object sender, RoutedEventArgs e)
         {
