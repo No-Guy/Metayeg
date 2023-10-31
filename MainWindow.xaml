@@ -8,15 +8,17 @@
         Title="Metayeg" Height="1080" Width="1920">
     <Grid x:Name="ProjGrid" KeyDown="DeleteLast">
         <Button Content="Set Path" HorizontalAlignment="Left" Height="31" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="74" Click="Button_Click" Panel.ZIndex="1"/>
-        <Label Content="Current Path: None" Name="PathLabel" HorizontalAlignment="Left" Height="31" Margin="97,0,0,10" VerticalAlignment="Bottom" Width="492" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <Image x:Name="Opened" HorizontalAlignment="Left" Height="1002" Margin="10,10,0,0" VerticalAlignment="Top" Width="1874" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
-        <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="31" Margin="0,0,502,2" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,213,2" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Label Content="Current Path: None" Name="PathLabel" HorizontalAlignment="Left" Height="31" Margin="97,0,0,10" VerticalAlignment="Bottom" Width="407" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Image x:Name="Opened" HorizontalAlignment="Left" Height="980" Margin="10,10,0,0" VerticalAlignment="Top" Width="1874" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
+        <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="31" Margin="0,0,509,9" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,211,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <Button Content="Export" HorizontalAlignment="Right" Height="40" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1"/>
         <Button Content="Previous" Name="PreviousButton" HorizontalAlignment="Left" Height="30" Margin="873,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
         <Button Content="Next" Name="NextButton" HorizontalAlignment="Left" Height="29" Margin="980,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
-        <TextBox Name="Class_TextBox" HorizontalAlignment="Left" Height="20" Margin="770,0,0,16" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="103" LostFocus="ClassBox_LostFocus" GotFocus="ClassBox_GotFocus" Panel.ZIndex="1"/>
-        <Label Content="Class:" x:Name="Class_Text" HorizontalAlignment="Left" Height="25" Margin="734,0,0,15" VerticalAlignment="Bottom" Width="41" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <TextBox Name="Class_TextBox" HorizontalAlignment="Left" Height="20" Margin="736,0,0,17" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="102" LostFocus="ClassBox_LostFocus" GotFocus="ClassBox_GotFocus" Panel.ZIndex="1"/>
+        <Label Content="Class:" x:Name="Class_Text" HorizontalAlignment="Left" Height="25" Margin="700,0,0,16" VerticalAlignment="Bottom" Width="40" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <CheckBox Content="Load Labeling" Name="LoadLablingCB" HorizontalAlignment="Left" IsChecked="True" Margin="601,0,0,21" VerticalAlignment="Bottom" Checked="Load_Checked" Unchecked="Load_Checked"/>
+        <Image Name ="ClassColor"  HorizontalAlignment="Left" Height="20" Margin="845,0,0,17" VerticalAlignment="Bottom" Width="20" />
     </Grid>
 
 

@@ -16,6 +16,10 @@ using static System.Windows.Forms.DataFormats;
 using System.Security.Cryptography;
 using System.Windows.Threading;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using System;
+using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Drawing;
 
 namespace WpfApp1
 {
@@ -24,12 +28,13 @@ namespace WpfApp1
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static Dictionary<int,string> classes = new Dictionary<int,string>();
+        public static Dictionary<int,(string,RectColor)> classes = new Dictionary<int,(string, RectColor)>();
         private DispatcherTimer timer;
         public MainWindow()
         {
             InitializeComponent();
-            classes[0] = "person";
+            
+            //classes[0] = ("person",new RectColor(150,0,0,200));
             LoadClasses();
             NewImage();
             Opened.MouseDown += Opened_MouseDown;
@@ -37,7 +42,10 @@ namespace WpfApp1
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromMilliseconds(10); // Adjust the interval as needed
             timer.Tick += UpdateMouseHeld;
-            
+            LoadLabel = true;
+            LoadLablingCB.IsChecked = true;
+
+
         }
         public struct YOLORect
         {
@@ -53,13 +61,30 @@ namespace WpfApp1
                 c = c0;
                     
             }
+            
             public override string ToString()
             {
                 return $"{(int)c} {Math.Round(x,4)} {Math.Round(y,4)} {Math.Round(w, 4)} {Math.Round(h, 4)}";
             }
 
         }
+        public struct RectColor
+        {
+            public byte r;
+            public byte g;
+            public byte b;
+            public byte a;
+            public RectColor(byte r0, byte g0, byte b0, byte a0)
+            {
+                r = r0;
+                g = g0; b = b0;
+                a = a0;
+            }
+        }
+        public static bool LoadLabel = true;
         public static string PATH = "";
+        public static string ClassesFilePath = "";
+        public static string labelsFolder = "";
         private static (double, double)[] SelectedLocations = new (double, double)[2];
         private static int CurrentID = 0;
         private static System.Windows.Controls.Image[] LocationImages = new System.Windows.Controls.Image[2];
@@ -90,7 +115,8 @@ namespace WpfApp1
             CurrentClass = 0;
             if (classes.ContainsKey(CurrentClass))
             {
-                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass]})";
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+                ChangeClassColor();
             }
             else
             {
@@ -104,12 +130,14 @@ namespace WpfApp1
 
             // Path to the text file
             string filePath = System.IO.Path.Combine(executableDirectory, "Classes.txt");
+            ClassesFilePath = filePath;
             if (!File.Exists(filePath))
             {
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     writer.WriteLine("person 0");
                     writer.WriteLine("test -1");
+
                     // You can write more content if needed.
                 }
             }
@@ -119,19 +147,27 @@ namespace WpfApp1
                 try
                 {
                     // Open the file for reading
+                    Random random = new Random();
                     using (StreamReader reader = new StreamReader(filePath))
                     {
                         string line;
                         while ((line = reader.ReadLine()) != null)
                         {
                             var parts = line.Split(" ");
-                            if(parts.Length == 2)
+                            if(parts.Length >= 2 && parts.Length < 5)
                             {
                                 int number;
                                 if (int.TryParse(parts[1], out number))
                                 {
-                                    classes[number] = parts[0];
+                                    classes[number] = (parts[0],new RectColor((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256),200));
 
+                                }
+                            }
+                            else if(parts.Length == 5)
+                            {
+                                if (int.TryParse(parts[1], out int number) && byte.TryParse(parts[2], out byte r) && byte.TryParse(parts[3], out byte g) && byte.TryParse(parts[4], out byte b))
+                                {
+                                    classes[number] = (parts[0], new RectColor(r, g, b, 200));
                                 }
                             }
                         }
@@ -144,7 +180,7 @@ namespace WpfApp1
             }
 
         }
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
             //PathLabel.Content = "aaa";
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
@@ -156,15 +192,66 @@ namespace WpfApp1
             string selectedFolderPath = folderBrowserDialog.SelectedPath;
             PathLabel.Content = selectedFolderPath;
             PATH = selectedFolderPath;
+            labelsFolder = System.IO.Path.Combine(PATH, "labels");
             ImageObj.CreateImages();
             if (ImageObj.Images.Count > 0)
             {
                 Opened.Source = new BitmapImage(new Uri(ImageObj.Images[0].PicturePath, UriKind.Absolute));
                 ImageObj.Shown = ImageObj.Images[0];
                 ImageObj.ShownInt = 0;
+                PathLabel.Content = ImageObj.Shown.PicturePath;
             }
-
+            await Task.Delay(100);
+            if (ImageObj.Shown != null)
+            {
+                TryLoad();
+            }
             //}
+        }
+        private void TryLoad()
+        {
+            if (LoadLabel)
+            {
+                var Path = System.IO.Path.Combine(labelsFolder, ImageObj.Shown.name + ".txt");
+                if (File.Exists(Path))
+                {
+                    try
+                    {
+                        using (StreamReader reader = new StreamReader(Path))
+                        {
+                            string line;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                var parts = line.Split(" ");
+                                if (parts.Length == 5)
+                                {
+                                    if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
+                                    {
+
+                                        x *= Opened.Source.Width;
+                                        w *= Opened.Source.Width;
+                                        y *= Opened.Source.Height;
+                                        h *= Opened.Source.Height;
+
+                                        var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
+                                        var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
+                                        var corner1 = (x + w / 2, y + h / 2);
+                                        var corner2 = (x - w / 2, y - h / 2);
+                                        //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
+                                        BuildRectEXT(offset(inApp(corner1),topLeft, globaltopleft), offset(inApp(corner2),topLeft, globaltopleft), cls);
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+        public static (double,double) offset((double, double) a, System.Windows.Point b, System.Windows.Point c)
+        {
+            return (a.Item1 + Math.Abs(b.X - c.X), a.Item2 + Math.Abs(b.Y - c.Y));
         }
         private void DeleteLast(object sender, System.Windows.Input.KeyEventArgs e)
         {
@@ -186,7 +273,7 @@ namespace WpfApp1
                 //System.Windows.Application.Current.MainWindow.Focus();
             }
         }
-        public void NextPrev(object sender, RoutedEventArgs e)
+        public async void NextPrev(object sender, RoutedEventArgs e)
         {
             NewImage();
             if (ImageObj.Images.Count > 1)
@@ -210,6 +297,12 @@ namespace WpfApp1
                 }
                  ImageObj.Shown = ImageObj.Images[ImageObj.ShownInt];
                 Opened.Source = new BitmapImage(new Uri(ImageObj.Shown.PicturePath, UriKind.Absolute));
+                await Task.Delay(100);
+                if (ImageObj.Shown != null)
+                {
+                    TryLoad();
+                    PathLabel.Content = ImageObj.Shown.PicturePath;
+                }
                 
             }
         }
@@ -225,7 +318,7 @@ namespace WpfApp1
                 double imageHeight = Opened.ActualHeight;
                 int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
                 int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
-                PixelLocation.Content = $"Selected Location: {inImage((mousePosition.X, mousePosition.Y))}";
+                PixelLocation.Content = $"Selected Location: {(round(inImage((mousePosition.X, mousePosition.Y)).Item1), round(inImage((mousePosition.X, mousePosition.Y)).Item2))}";
             }
         }
         
@@ -321,8 +414,8 @@ namespace WpfApp1
                     double imageWidth = Opened.ActualWidth;
                     double imageHeight = Opened.ActualHeight;
 
-                    int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
-                    int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
+                    //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
+                    //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
                     SelectedLocations[SelectedID] = (mousePosition.X, mousePosition.Y);
                     //PixelLocation.Content = $"Selected Location: {inImage(SelectedLocations[CurrentID])}";
                     CurrentID++;
@@ -332,11 +425,18 @@ namespace WpfApp1
             }
             
         }
-        public (int,int) inImage((double,double) mouse_position)
+        public (double, double) inImage((double,double) mouse_position)
         {
             double imageWidth = Opened.ActualWidth;
             double imageHeight = Opened.ActualHeight;
-            return (round((mouse_position.Item1 / imageWidth) * Opened.Source.Width),round((mouse_position.Item2 / imageHeight) * Opened.Source.Height));
+            return ((mouse_position.Item1 / imageWidth) * Opened.Source.Width,(mouse_position.Item2 / imageHeight) * Opened.Source.Height);
+
+        }
+        public (double, double) inApp((double, double) image_location)
+        {
+            double imageWidth = Opened.ActualWidth;
+            double imageHeight = Opened.ActualHeight;
+            return ((image_location.Item1 * imageWidth) / Opened.Source.Width, (image_location.Item2 * imageHeight) / Opened.Source.Height);
 
         }
         private void UpdateLocations(int cid = -1)
@@ -432,6 +532,30 @@ namespace WpfApp1
             var corner2 = inImage(SelectedLocations[1]);
             LastRect.Content = $"Current: ({corner1}, {corner2})";
         }
+        public void BuildRectEXT((double, double) cor1, (double,double) cor2, int c)
+        {
+            
+            var i = new System.Windows.Controls.Image();
+            i.Width = Math.Abs(cor1.Item1 - cor2.Item1);
+            i.Height = Math.Abs(cor1.Item2 - cor2.Item2);
+            i.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+            i.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+            i.Margin = new Thickness(cor1.Item1 - i.Width * ((cor1.Item1 > cor2.Item1) ? 1 : 0), cor1.Item2 - i.Height * ((cor1.Item2 > cor2.Item2) ? 1 : 0), 0, 0);
+            i.Name = $"Rect_{RectCount}";
+            i.IsHitTestVisible = false;
+            RectImages.Add(i);
+            ProjGrid.Children.Add(i);
+            System.Windows.Controls.Panel.SetZIndex(i, 1);
+            if (!classes.ContainsKey(c))
+            {
+                AddClass(c);
+            }
+            setRectColor(i, classes[c].Item2);
+        }
+        public void setRectColor(System.Windows.Controls.Image i, RectColor C)
+        {
+            setRectColor(i, C.r, C.g, C.b, MARGINWIDTH);
+        }
         private void setRectColor(System.Windows.Controls.Image i,byte r,byte g,byte b, int mw, byte alpha = 200)
         {
             int width = (int)i.Width;
@@ -471,7 +595,7 @@ namespace WpfApp1
         }
         public void CompleteRect()
         {
-            setRectColor(CurrentRect, 120, 0, 0,MARGINWIDTH,180);
+            setRectColor(CurrentRect, classes[CurrentClass].Item2.r, classes[CurrentClass].Item2.g, classes[CurrentClass].Item2.b, MARGINWIDTH, classes[CurrentClass].Item2.a);
             ResetLocations();
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
@@ -499,23 +623,125 @@ namespace WpfApp1
 
 
         }
+        private void ChangeClassColor()
+        {
+            var i = ClassColor;
+            int width = (int)i.Width;
+            int height = (int)i.Height;
+            PixelFormat pixelFormat = PixelFormats.Bgra32;
+            try
+            {
+                var writeablebi = new WriteableBitmap(
+                    (int)i.Width,
+                    (int)i.Height,
+                    20,
+                    20,
+                    PixelFormats.Bgra32,
+                    null);
+
+
+                byte[] pixels = new byte[width * height * 4];
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = (y * 4 * width) + (x * 4);
+                        // Set the pixel color (B, G, R, A) - here, we set it to red
+                        pixels[index + 0] = classes[CurrentClass].Item2.b; // Blue
+                        pixels[index + 1] = classes[CurrentClass].Item2.g; // Green
+                        pixels[index + 2] = classes[CurrentClass].Item2.r; // Red
+                        pixels[index + 3] = 255; // Alpha 
+                    }
+                }
+                writeablebi.WritePixels(new Int32Rect(0, 0, width, height), pixels, 4 * width, 0);
+                i.Source = writeablebi;
+            }
+            catch { }
+        }
         private void CBLF()
         {
             string editedText = Class_TextBox.Text;
+            var split = editedText.Split(' ');
+
             int number;
-            if (int.TryParse(editedText, out number))
+            if (split.Length == 1 && int.TryParse(editedText, out number) || split.Length == 2 && int.TryParse(split[0], out number))
             {
                 CurrentClass = number;
+
                 
-            }
-            if (classes.ContainsKey(CurrentClass))
-            {
-                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass]})";
             }
             else
             {
-                Class_TextBox.Text = $"{CurrentClass}(unknown)";
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+                ChangeClassColor();
+                return;
             }
+            if (classes.ContainsKey(CurrentClass))
+            {
+                if(split.Length == 2)
+                {
+                    AddClass(number, split[1]);
+                }
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+                ChangeClassColor();
+            }
+            else
+            {
+                
+                string name = split.Length == 1 ? "unknown" : split[1];
+                AddClass(number, name);
+            }
+        }
+        public void AddClass(int number, string name = "unknown")
+        {
+            var random = new Random();
+            AddClass(number, new RectColor((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256), 200), name);
+        }
+        public void AddClass(int number, RectColor color, string name = "unknown")
+        {
+            //check if file has class
+            string[] lines = File.ReadAllLines(ClassesFilePath);
+            int SelectedLine = -1;
+            int i = 0;
+            foreach(string line in lines)
+            {
+                if(int.TryParse(line.Split(' ')[1], out int lineclass))
+                {
+                    if(lineclass == number)
+                    {
+                        SelectedLine = i;
+                    }
+                }
+                i++;
+            }
+            System.Windows.MessageBox.Show($"{SelectedLine}");
+            if (SelectedLine >= 0 && SelectedLine <= lines.Length)
+            {
+                // Create a new array without the line to delete
+                string[] updatedLines = new string[lines.Length - 1];
+                int updatedIndex = 0;
+
+                for (int j = 0; j < lines.Length; j++)
+                {
+                    if (j != SelectedLine)
+                    {
+                        updatedLines[updatedIndex] = lines[j];
+                        updatedIndex++;
+                    }
+                }
+                File.WriteAllLines(ClassesFilePath, updatedLines);
+            }
+            classes[number] = (name, color);
+            Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+            try
+            {
+                using (StreamWriter writer = File.AppendText(ClassesFilePath))
+                {
+                    writer.WriteLine($"{classes[number].Item1} {number} {classes[number].Item2.r} {classes[number].Item2.g} {classes[number].Item2.b}");
+                }
+            }
+            catch { }
+            ChangeClassColor();
         }
         private void ClassBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -526,7 +752,7 @@ namespace WpfApp1
         {
             if (PATH != "" && CreatedRectangles.Count > 0)
             {
-                string folderPath = System.IO.Path.Combine(PATH, "labels");
+                string folderPath = labelsFolder;
 
                 try
                 {
@@ -540,7 +766,7 @@ namespace WpfApp1
                 string OriginalName = ImageObj.Shown.name;
 
                 string newfilepath = System.IO.Path.Combine(folderPath, OriginalName + ".txt");
-                using (StreamWriter writer = new StreamWriter(newfilepath))
+                using (StreamWriter writer = File.AppendText(newfilepath))
                 {
                     foreach (YOLORect CurrentRect in CreatedRectangles)
                     {
@@ -551,6 +777,11 @@ namespace WpfApp1
                 }
             }
 
+        }
+
+        private void Load_Checked(object sender, RoutedEventArgs e)
+        {
+            LoadLabel = !LoadLabel;
         }
     }
 }
