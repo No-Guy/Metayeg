@@ -20,6 +20,7 @@ using System;
 using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Drawing;
+using Metayeg;
 
 namespace WpfApp1
 {
@@ -28,12 +29,13 @@ namespace WpfApp1
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static Dictionary<int,(string,RectColor)> classes = new Dictionary<int,(string, RectColor)>();
+        public static Dictionary<int, (string, RectColor)> classes = new Dictionary<int, (string, RectColor)>();
         private DispatcherTimer timer;
+        public static MainWindow Singleton;
         public MainWindow()
         {
             InitializeComponent();
-            
+            Singleton = this;
             //classes[0] = ("person",new RectColor(150,0,0,200));
             LoadClasses();
             NewImage();
@@ -44,6 +46,7 @@ namespace WpfApp1
             timer.Tick += UpdateMouseHeld;
             LoadLabel = true;
             LoadLablingCB.IsChecked = true;
+
 
 
         }
@@ -59,12 +62,12 @@ namespace WpfApp1
                 w = w0;
                 h = h0;
                 c = c0;
-                    
+
             }
-            
+
             public override string ToString()
             {
-                return $"{(int)c} {Math.Round(x,4)} {Math.Round(y,4)} {Math.Round(w, 4)} {Math.Round(h, 4)}";
+                return $"{(int)c} {Math.Round(x, 4)} {Math.Round(y, 4)} {Math.Round(w, 4)} {Math.Round(h, 4)}";
             }
 
         }
@@ -85,33 +88,28 @@ namespace WpfApp1
         public static string PATH = "";
         public static string ClassesFilePath = "";
         public static string labelsFolder = "";
-        private static (double, double)[] SelectedLocations = new (double, double)[2];
-        private static int CurrentID = 0;
-        private static System.Windows.Controls.Image[] LocationImages = new System.Windows.Controls.Image[2];
+        public static (double, double)[] SelectedLocations = new (double, double)[2];
+        public static int CurrentID = 0;
+        public static System.Windows.Controls.Image[] LocationImages = new System.Windows.Controls.Image[2];
         private System.Windows.Controls.Image? CurrentRect;
-        public static List<System.Windows.Controls.Image> RectImages = new List<System.Windows.Controls.Image>();
-        public static List<YOLORect> CreatedRectangles = new List<YOLORect>();
+        //public static List<System.Windows.Controls.Image> RectImages = new List<System.Windows.Controls.Image>();
+        //public static List<YOLORect> CreatedRectangles = new List<YOLORect>();
         public int RectCount = 0;
-        private int SelectedID = 0;
-        public static readonly int MARGINWIDTH = 5;
+        public static int SelectedID = 0;
+        public static readonly int MARGINWIDTH = 4;
         public static int CurrentClass = 0;
         public void NewImage()
         {
             DontSaveRect();
             ResetLocations(true);
+            RectText.DestroyAll();
             LastRect.Content = "";
             PixelLocation.Content = "";
-            CreatedRectangles = new List<YOLORect>();
             LocationImages = new System.Windows.Controls.Image[2];
             SelectedLocations = new (double, double)[2];
             CurrentID = 0;
             SelectedID = -1;
-            foreach (var RI in RectImages)
-            {
-                ProjGrid.Children.Remove(RI);
-
-            }
-            RectImages = new List<System.Windows.Controls.Image>();
+            SidebarTitle.Content = "";
             CurrentClass = 0;
             if (classes.ContainsKey(CurrentClass))
             {
@@ -122,7 +120,7 @@ namespace WpfApp1
             {
                 Class_TextBox.Text = $"{CurrentClass}(unknown)";
             }
-            
+
         }
         public void LoadClasses()
         {
@@ -141,7 +139,7 @@ namespace WpfApp1
                     // You can write more content if needed.
                 }
             }
-                // Read the contents of the text file
+            // Read the contents of the text file
             if (File.Exists(filePath))
             {
                 try
@@ -154,16 +152,16 @@ namespace WpfApp1
                         while ((line = reader.ReadLine()) != null)
                         {
                             var parts = line.Split(" ");
-                            if(parts.Length >= 2 && parts.Length < 5)
+                            if (parts.Length >= 2 && parts.Length < 5)
                             {
                                 int number;
                                 if (int.TryParse(parts[1], out number))
                                 {
-                                    classes[number] = (parts[0],new RectColor((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256),200));
+                                    classes[number] = (parts[0], new RectColor((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256), 200));
 
                                 }
                             }
-                            else if(parts.Length == 5)
+                            else if (parts.Length == 5)
                             {
                                 if (int.TryParse(parts[1], out int number) && byte.TryParse(parts[2], out byte r) && byte.TryParse(parts[3], out byte g) && byte.TryParse(parts[4], out byte b))
                                 {
@@ -175,7 +173,7 @@ namespace WpfApp1
                 }
                 catch
                 {
-                    
+
                 }
             }
 
@@ -198,6 +196,7 @@ namespace WpfApp1
             {
                 Opened.Source = new BitmapImage(new Uri(ImageObj.Images[0].PicturePath, UriKind.Absolute));
                 ImageObj.Shown = ImageObj.Images[0];
+                RectText.location = 0;
                 ImageObj.ShownInt = 0;
                 PathLabel.Content = ImageObj.Shown.PicturePath;
             }
@@ -205,6 +204,14 @@ namespace WpfApp1
             if (ImageObj.Shown != null)
             {
                 TryLoad();
+            }
+            if (ImageObj.Shown != null)
+            {
+                SidebarTitle.Content = ImageObj.Shown.name + ".txt";
+            }
+            else
+            {
+                SidebarTitle.Content = "";
             }
             //}
         }
@@ -227,7 +234,7 @@ namespace WpfApp1
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
                                     {
-
+                                        var Rect = new YOLORect(x, y, w, h, cls);
                                         x *= Opened.Source.Width;
                                         w *= Opened.Source.Width;
                                         y *= Opened.Source.Height;
@@ -237,8 +244,9 @@ namespace WpfApp1
                                         var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var corner1 = (x + w / 2, y + h / 2);
                                         var corner2 = (x - w / 2, y - h / 2);
+
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
-                                        BuildRectEXT(offset(inApp(corner1),topLeft, globaltopleft), offset(inApp(corner2),topLeft, globaltopleft), cls);
+                                        BuildRectEXT(offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft), Rect);
                                     }
                                 }
 
@@ -249,7 +257,22 @@ namespace WpfApp1
                 }
             }
         }
-        public static (double,double) offset((double, double) a, System.Windows.Point b, System.Windows.Point c)
+        public ((double,double),(double, double)) YoloRectToCorners(YOLORect r)
+        {
+            var x = r.x; var y = r.y; var w = r.w; var h = r.h;
+            x *= Opened.Source.Width;
+            w *= Opened.Source.Width;
+            y *= Opened.Source.Height;
+            h *= Opened.Source.Height;
+
+            var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
+            var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
+            var corner1 = (x + w / 2, y + h / 2);
+            var corner2 = (x - w / 2, y - h / 2);
+            return (offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft));
+
+        }
+        public static (double, double) offset((double, double) a, System.Windows.Point b, System.Windows.Point c)
         {
             return (a.Item1 + Math.Abs(b.X - c.X), a.Item2 + Math.Abs(b.Y - c.Y));
         }
@@ -257,14 +280,17 @@ namespace WpfApp1
         {
             if (e.Key == Key.Delete)
             {
-                if (CreatedRectangles.Count > 0)
+                if (RectText.Rectangles.Count > 0 && CurrentID == 0)
                 {
-                    CreatedRectangles.RemoveAt(CreatedRectangles.Count - 1);
-                    ProjGrid.Children.Remove(RectImages[RectImages.Count - 1]);
-                    RectImages.RemoveAt(RectImages.Count - 1);
+                    RectText.Rectangles[RectText.Rectangles.Count - 1].Destroy();
+                }
+                else if (RectText.Rectangles.Count > 0)
+                {
+                    ResetLocations();
+                    DontSaveRect();
                 }
             }
-            if(e.Key == Key.Return && Class_TextBox.IsFocused)
+            if (e.Key == Key.Return && Class_TextBox.IsFocused)
             {
                 CBLF();
                 //Keyboard.ClearFocus();
@@ -278,7 +304,7 @@ namespace WpfApp1
             NewImage();
             if (ImageObj.Images.Count > 1)
             {
-                if(sender == NextButton)
+                if (sender == NextButton)
                 {
                     ImageObj.ShownInt++;
                 }
@@ -287,27 +313,33 @@ namespace WpfApp1
                     ImageObj.ShownInt--;
                 }
 
-                if(ImageObj.ShownInt == ImageObj.Images.Count)
+                if (ImageObj.ShownInt == ImageObj.Images.Count)
                 {
                     ImageObj.ShownInt = 0;
                 }
-                else if(ImageObj.ShownInt == -1)
+                else if (ImageObj.ShownInt == -1)
                 {
                     ImageObj.ShownInt = ImageObj.Images.Count - 1;
                 }
-                 ImageObj.Shown = ImageObj.Images[ImageObj.ShownInt];
+                RectText.location = 0;
+                ImageObj.Shown = ImageObj.Images[ImageObj.ShownInt];
                 Opened.Source = new BitmapImage(new Uri(ImageObj.Shown.PicturePath, UriKind.Absolute));
                 await Task.Delay(100);
                 if (ImageObj.Shown != null)
                 {
                     TryLoad();
                     PathLabel.Content = ImageObj.Shown.PicturePath;
+                    SidebarTitle.Content = ImageObj.Shown.name + ".txt";
                 }
-                
+                else
+                {
+                    SidebarTitle.Content = "";
+                }
+
             }
         }
 
-        
+
         public void UpdateLocation(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (ImageObj.Shown != null)
@@ -321,8 +353,9 @@ namespace WpfApp1
                 PixelLocation.Content = $"Selected Location: {(round(inImage((mousePosition.X, mousePosition.Y)).Item1), round(inImage((mousePosition.X, mousePosition.Y)).Item2))}";
             }
         }
-        
-        private void Opened_MouseDown(object sender, MouseButtonEventArgs e) {
+
+        private void Opened_MouseDown(object sender, MouseButtonEventArgs e)
+        {
             if (ImageObj.Shown != null && e.ChangedButton == MouseButton.Left)
             {
                 if (CurrentID == 2)
@@ -337,15 +370,15 @@ namespace WpfApp1
                 }
 
                 timer.Start();
-                
+
             }
             else if (e.ChangedButton == MouseButton.Right && CurrentID == 2)
             {
                 CompleteRect();
             }
         }
-        
-        
+
+
         private void Opened_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (ImageObj.Shown != null && e.ChangedButton == MouseButton.Left && mousehold)
@@ -362,12 +395,12 @@ namespace WpfApp1
             int vid = -1;
             for (int i = 0; i < LocationImages.Length; i++)
             {
-                if(sender == LocationImages[i])
+                if (sender == LocationImages[i])
                 {
                     vid = i; break;
                 }
             }
-            if(vid != -1)
+            if (vid != -1)
             {
                 SelectedID = vid;
                 CurrentID = 1;
@@ -380,7 +413,7 @@ namespace WpfApp1
         {
             if (mousehold)
             {
-                
+
                 //ResetLocations(SelectedID == 0 || SelectedID == 1 );
                 ResetLocations(CurrentID == 2 ? true : false);
                 DontSaveRect();
@@ -423,13 +456,13 @@ namespace WpfApp1
                     UpdateLocations();
                 }
             }
-            
+
         }
-        public (double, double) inImage((double,double) mouse_position)
+        public (double, double) inImage((double, double) mouse_position)
         {
             double imageWidth = Opened.ActualWidth;
             double imageHeight = Opened.ActualHeight;
-            return ((mouse_position.Item1 / imageWidth) * Opened.Source.Width,(mouse_position.Item2 / imageHeight) * Opened.Source.Height);
+            return ((mouse_position.Item1 / imageWidth) * Opened.Source.Width, (mouse_position.Item2 / imageHeight) * Opened.Source.Height);
 
         }
         public (double, double) inApp((double, double) image_location)
@@ -439,9 +472,9 @@ namespace WpfApp1
             return ((image_location.Item1 * imageWidth) / Opened.Source.Width, (image_location.Item2 * imageHeight) / Opened.Source.Height);
 
         }
-        private void UpdateLocations(int cid = -1)
+        public void UpdateLocations(int cid = -1)
         {
-            if(cid == -1)
+            if (cid == -1)
             {
                 cid = CurrentID;
             }
@@ -463,7 +496,6 @@ namespace WpfApp1
                 i.Name = "test_image";
                 i.Width = 20;
                 i.Height = 20;
-                
                 System.Windows.Controls.Panel.SetZIndex(i, 3);
                 ProjGrid.Children.Add(i);
                 LocationImages[j] = i;
@@ -487,7 +519,7 @@ namespace WpfApp1
                 // Show the image
                 i.Visibility = Visibility.Visible;
             }
-            if(cid == 2)
+            if (cid == 2)
             {
                 BuildRect();
             }
@@ -519,22 +551,22 @@ namespace WpfApp1
             int height = (int)i.Height;
             i.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
             i.VerticalAlignment = System.Windows.VerticalAlignment.Top;
-            i.Margin = new Thickness(SelectedLocations[0].Item1 + LocationImages[0].Width/2 - i.Width * ((SelectedLocations[0].Item1 > SelectedLocations[1].Item1) ? 1 : 0), SelectedLocations[0].Item2 + LocationImages[0].Height / 2 - i.Height * ((SelectedLocations[0].Item2 > SelectedLocations[1].Item2) ? 1 : 0), 0, 0);
+            i.Margin = new Thickness(SelectedLocations[0].Item1 + LocationImages[0].Width / 2 - i.Width * ((SelectedLocations[0].Item1 > SelectedLocations[1].Item1) ? 1 : 0), SelectedLocations[0].Item2 + LocationImages[0].Height / 2 - i.Height * ((SelectedLocations[0].Item2 > SelectedLocations[1].Item2) ? 1 : 0), 0, 0);
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
             CurrentRect = i;
-            
+
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
-            setRectColor(i, 255, 0, 0,1);
+            setRectColor(i, 255, 0, 0, 1);
 
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
-            LastRect.Content = $"Current: ({corner1}, {corner2})";
+            LastRect.Content = $"Current: (({Math.Round(corner1.Item1)},{Math.Round(corner1.Item2)}), ({Math.Round(corner2.Item1)},{Math.Round(corner2.Item2)}))";
         }
-        public void BuildRectEXT((double, double) cor1, (double,double) cor2, int c)
+        public void BuildRectEXT((double, double) cor1, (double, double) cor2, YOLORect r)
         {
-            
+            int c = r.c;
             var i = new System.Windows.Controls.Image();
             i.Width = Math.Abs(cor1.Item1 - cor2.Item1);
             i.Height = Math.Abs(cor1.Item2 - cor2.Item2);
@@ -543,7 +575,6 @@ namespace WpfApp1
             i.Margin = new Thickness(cor1.Item1 - i.Width * ((cor1.Item1 > cor2.Item1) ? 1 : 0), cor1.Item2 - i.Height * ((cor1.Item2 > cor2.Item2) ? 1 : 0), 0, 0);
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
-            RectImages.Add(i);
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
             if (!classes.ContainsKey(c))
@@ -551,12 +582,20 @@ namespace WpfApp1
                 AddClass(c);
             }
             setRectColor(i, classes[c].Item2);
+            new RectText(r, i);
         }
-        public void setRectColor(System.Windows.Controls.Image i, RectColor C)
+        public static void setRectColor(System.Windows.Controls.Image i, RectColor C, int mw = -1)
         {
-            setRectColor(i, C.r, C.g, C.b, MARGINWIDTH);
+            if (mw == -1)
+            {
+                setRectColor(i, C.r, C.g, C.b, MARGINWIDTH);
+            }
+            else
+            {
+                setRectColor(i, C.r, C.g, C.b, mw);
+            }
         }
-        private void setRectColor(System.Windows.Controls.Image i,byte r,byte g,byte b, int mw, byte alpha = 200)
+        private static void setRectColor(System.Windows.Controls.Image i, byte r, byte g, byte b, int mw, byte alpha = 200)
         {
             int width = (int)i.Width;
             int height = (int)i.Height;
@@ -590,7 +629,7 @@ namespace WpfApp1
             }
             catch
             {
-                ResetLocations();
+                Singleton.ResetLocations();
             }
         }
         public void CompleteRect()
@@ -599,17 +638,16 @@ namespace WpfApp1
             ResetLocations();
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
-            double Width = ((double)Math.Abs(corner1.Item1- corner2.Item1)) / Opened.Source.Width;
+            double Width = ((double)Math.Abs(corner1.Item1 - corner2.Item1)) / Opened.Source.Width;
             double Height = ((double)Math.Abs(corner1.Item2 - corner2.Item2)) / Opened.Source.Height;
             double x = (((double)Math.Abs(corner1.Item1 + corner2.Item1)) / 2d) / Opened.Source.Width;
             double y = (((double)Math.Abs(corner1.Item2 + corner2.Item2)) / 2d) / Opened.Source.Height;
             RectCount++;
-            RectImages.Add(CurrentRect);
+            new RectText(new YOLORect(x, y, Width, Height, CurrentClass), CurrentRect);
             CurrentRect = null;
-            CreatedRectangles.Add(new YOLORect(x, y, Width, Height, CurrentClass));
-            LastRect.Content = $"Last: <x: {Math.Round(x,2)},y: {Math.Round(y,2)},w: {Math.Round(Width,2)},h: {Math.Round(Height,2)}, c: {CurrentClass}>";
+            LastRect.Content = $"Last: <x: {Math.Round(x, 2)},y: {Math.Round(y, 2)},w: {Math.Round(Width, 2)},h: {Math.Round(Height, 2)}, c: {CurrentClass}>";
         }
-        private int round(double x)
+        public static int round(double x)
         {
             if (x - (int)x > 0.5)
             {
@@ -668,7 +706,7 @@ namespace WpfApp1
             {
                 CurrentClass = number;
 
-                
+
             }
             else
             {
@@ -678,7 +716,7 @@ namespace WpfApp1
             }
             if (classes.ContainsKey(CurrentClass))
             {
-                if(split.Length == 2)
+                if (split.Length == 2)
                 {
                     AddClass(number, split[1]);
                 }
@@ -687,7 +725,7 @@ namespace WpfApp1
             }
             else
             {
-                
+
                 string name = split.Length == 1 ? "unknown" : split[1];
                 AddClass(number, name);
             }
@@ -703,18 +741,17 @@ namespace WpfApp1
             string[] lines = File.ReadAllLines(ClassesFilePath);
             int SelectedLine = -1;
             int i = 0;
-            foreach(string line in lines)
+            foreach (string line in lines)
             {
-                if(int.TryParse(line.Split(' ')[1], out int lineclass))
+                if (int.TryParse(line.Split(' ')[1], out int lineclass))
                 {
-                    if(lineclass == number)
+                    if (lineclass == number)
                     {
                         SelectedLine = i;
                     }
                 }
                 i++;
             }
-            System.Windows.MessageBox.Show($"{SelectedLine}");
             if (SelectedLine >= 0 && SelectedLine <= lines.Length)
             {
                 // Create a new array without the line to delete
@@ -750,7 +787,7 @@ namespace WpfApp1
         }
         public void Export(object sender, RoutedEventArgs e)
         {
-            if (PATH != "" && CreatedRectangles.Count > 0)
+            if (PATH != "" && RectText.Rectangles.Count > 0)
             {
                 string folderPath = labelsFolder;
 
@@ -766,11 +803,11 @@ namespace WpfApp1
                 string OriginalName = ImageObj.Shown.name;
 
                 string newfilepath = System.IO.Path.Combine(folderPath, OriginalName + ".txt");
-                using (StreamWriter writer = File.AppendText(newfilepath))
+                using (StreamWriter writer = new StreamWriter(newfilepath))
                 {
-                    foreach (YOLORect CurrentRect in CreatedRectangles)
+                    foreach (var CurrentRect in RectText.Rectangles)
                     {
-                        writer.WriteLine(CurrentRect);
+                        writer.WriteLine(CurrentRect.Data);
 
                     }
 
@@ -782,6 +819,18 @@ namespace WpfApp1
         private void Load_Checked(object sender, RoutedEventArgs e)
         {
             LoadLabel = !LoadLabel;
+        }
+        //v2 changes//
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            RectText.UpdateRectTextsLocations();
+        }
+        private void MainWindow_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            int delta = e.Delta; // This is the amount of mouse wheel movement
+            RectText.location -= delta/120;
+            RectText.location = Math.Clamp(RectText.location, 0, Math.Max(RectText.Rectangles.Count - RectText.GetCount(),0));
+            RectText.UpdateRectTextsLocations();
         }
     }
 }
