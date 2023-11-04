@@ -83,6 +83,10 @@ namespace WpfApp1
                 g = g0; b = b0;
                 a = a0;
             }
+            public override string ToString()
+            {
+                return $"r: {r}, g: {g}, b: {b}, a: {a}";
+            }
         }
         public static bool LoadLabel = true;
         public static string PATH = "";
@@ -215,7 +219,7 @@ namespace WpfApp1
             }
             //}
         }
-        private void TryLoad()
+        public void TryLoad()
         {
             if (LoadLabel)
             {
@@ -257,7 +261,7 @@ namespace WpfApp1
                 }
             }
         }
-        public ((double,double),(double, double)) YoloRectToCorners(YOLORect r)
+        public ((double, double), (double, double)) YoloRectToCorners(YOLORect r)
         {
             var x = r.x; var y = r.y; var w = r.w; var h = r.h;
             x *= Opened.Source.Width;
@@ -325,6 +329,7 @@ namespace WpfApp1
                 ImageObj.Shown = ImageObj.Images[ImageObj.ShownInt];
                 Opened.Source = new BitmapImage(new Uri(ImageObj.Shown.PicturePath, UriKind.Absolute));
                 await Task.Delay(100);
+                //RectText.DestroyAll();
                 if (ImageObj.Shown != null)
                 {
                     TryLoad();
@@ -338,7 +343,12 @@ namespace WpfApp1
 
             }
         }
-
+        public void DeleteAllButtonFunction(object sender, RoutedEventArgs e)
+        {
+            RectText.DestroyAll();
+            ResetLocations();
+            DontSaveRect();
+        }
 
         public void UpdateLocation(object sender, System.Windows.Input.MouseEventArgs e)
         {
@@ -828,9 +838,14 @@ namespace WpfApp1
         private void MainWindow_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             int delta = e.Delta; // This is the amount of mouse wheel movement
-            RectText.location -= delta/120;
-            RectText.location = Math.Clamp(RectText.location, 0, Math.Max(RectText.Rectangles.Count - RectText.GetCount(),0));
+            RectText.location -= delta / 120;
+            RectText.location = Math.Clamp(RectText.location, 0, Math.Max(RectText.Rectangles.Count - RectText.GetCount(), 0));
             RectText.UpdateRectTextsLocations();
+        }
+        public void CallToYoloIT(object sender, RoutedEventArgs e)
+        {
+            YoloIt.CreatePatches();
+            
         }
     }
 }

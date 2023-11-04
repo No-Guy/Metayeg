@@ -106,6 +106,7 @@ namespace Metayeg
             if (l != null) {
                 l.FontWeight = FontWeights.Bold;
                 var ThisRect = ((RectText)l.Tag);
+                //System.Windows.MessageBox.Show(Lighten(classes[ThisRect.Data.c].Item2, 1.5d).ToString() +"\n" + classes[ThisRect.Data.c].Item2.ToString());
                 setRectColor(ThisRect.image, Lighten(classes[ThisRect.Data.c].Item2,1.5d), MARGINWIDTH + 2);
                 //MessageBox.Show(((RectText)l.Tag).Data.ToString());
             }
@@ -126,7 +127,12 @@ namespace Metayeg
         }
         public static RectColor Lighten(RectColor c, double by)
         {
-            return new RectColor((byte)((double)c.r * by), (byte)((double)c.g * by), (byte)((double)c.b * by), c.a);
+            return new RectColor(ClampAsByte(c.r * by), ClampAsByte(c.g * by), ClampAsByte(c.b * by), c.a);
+        }
+        public static byte ClampAsByte(double d)
+        {
+            d = Math.Clamp(d, 0, 255);
+            return (byte)d;
         }
     }
    

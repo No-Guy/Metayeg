@@ -7,12 +7,12 @@
         mc:Ignorable="d"
         Title="Metayeg" Height="1080" Width="1920" SizeChanged="MainWindow_SizeChanged" PreviewMouseWheel="MainWindow_PreviewMouseWheel">
     <Grid x:Name="ProjGrid" KeyDown="DeleteLast">
-        <Button Content="Set Path" HorizontalAlignment="Left" Height="31" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="74" Click="Button_Click" Panel.ZIndex="1"/>
-        <Label Content="Current Path: None" Name="PathLabel" HorizontalAlignment="Left" Height="31" Margin="97,0,0,10" VerticalAlignment="Bottom" Width="407" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Button Content="Set Path" HorizontalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="10,0,0,13" VerticalAlignment="Bottom" Width="74" Click="Button_Click" Panel.ZIndex="1"/>
+        <Label Content="Current Path: None" Name="PathLabel" VerticalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="84,0,0,13" VerticalAlignment="Bottom" Width="272" Panel.ZIndex="1" IsHitTestVisible ="False" FontSize="10"/>
         <Image x:Name="Opened" HorizontalAlignment="Left" Height="980" Margin="10,10,0,0" VerticalAlignment="Top" Width="1694" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
-        <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="31" Margin="0,0,509,9" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,211,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <Button Content="Save" HorizontalAlignment="Right" Height="40" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1" FontSize="24"/>
+        <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="29" Margin="0,0,671,12" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,204,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Button Content="Save" HorizontalAlignment="Right" Height="40" Margin="0,0,10,7" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1" FontSize="24"/>
         <Button Content="Previous" Name="PreviousButton" HorizontalAlignment="Left" Height="30" Margin="873,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
         <Button Content="Next" Name="NextButton" HorizontalAlignment="Left" Height="29" Margin="980,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
         <TextBox Name="Class_TextBox" HorizontalAlignment="Left" Height="20" Margin="736,0,0,17" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="102" LostFocus="ClassBox_LostFocus" GotFocus="ClassBox_GotFocus" Panel.ZIndex="1"/>
@@ -20,6 +20,10 @@
         <CheckBox Content="Load Labeling" Name="LoadLablingCB" HorizontalAlignment="Left" IsChecked="True" Margin="599,0,0,20" VerticalAlignment="Bottom" Checked="Load_Checked" Unchecked="Load_Checked"/>
         <Image Name ="ClassColor"  HorizontalAlignment="Left" Height="20" Margin="845,0,0,17" VerticalAlignment="Bottom" Width="20" />
         <Label Name ="SidebarTitle" Content="Resulting file" HorizontalAlignment="Right" Height="30" Margin="1721,10,0,0" VerticalAlignment="Top" Width="189" Panel.ZIndex="2" HorizontalContentAlignment ="Center" FontSize="14"/>
+        <Button Content="Run Yolo" Name="RunYoloButton" HorizontalAlignment="Left" Height="29" Margin="361,0,0,14" VerticalAlignment="Bottom" Width="101" Click="CallToYoloIT" Panel.ZIndex="1" FontSize="20"/>
+        <Label Content="Patches:" x:Name="PatchesLabel" HorizontalAlignment="Left" Height="25" Margin="479,0,0,17" VerticalAlignment="Bottom" Width="54" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <TextBox x:Name="Patches_TextBox" HorizontalAlignment="Left" Height="20" Margin="528,0,0,18" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="66" Panel.ZIndex="1"/>
+        <Button Content="Delete All" x:Name="DeleteButton" HorizontalAlignment="Right" Height="29" Margin="0,0,583,12" VerticalAlignment="Bottom" Width="72" Click="DeleteAllButtonFunction" Panel.ZIndex="1"/>
     </Grid>
 
 
