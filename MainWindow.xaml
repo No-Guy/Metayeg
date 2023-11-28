@@ -5,13 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
+        MouseUp="GenericMouseUp"
         Title="Metayeg" Height="1080" Width="1920" SizeChanged="MainWindow_SizeChanged" PreviewMouseWheel="MainWindow_PreviewMouseWheel">
     <Grid x:Name="ProjGrid" KeyDown="DeleteLast">
         <Button Content="Set Path" HorizontalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="10,0,0,13" VerticalAlignment="Bottom" Width="74" Click="Button_Click" Panel.ZIndex="1"/>
         <Label Content="Current Path: None" Name="PathLabel" VerticalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="84,0,0,13" VerticalAlignment="Bottom" Width="272" Panel.ZIndex="1" IsHitTestVisible ="False" FontSize="10"/>
         <Image x:Name="Opened" HorizontalAlignment="Left" Height="980" Margin="10,10,0,0" VerticalAlignment="Top" Width="1694" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
         <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="29" Margin="0,0,671,12" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,204,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
+        <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,294,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <Button Content="Save" HorizontalAlignment="Right" Height="40" Margin="0,0,10,7" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1" FontSize="24"/>
         <Button Content="Previous" Name="PreviousButton" HorizontalAlignment="Left" Height="30" Margin="873,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
         <Button Content="Next" Name="NextButton" HorizontalAlignment="Left" Height="29" Margin="980,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
@@ -24,6 +25,10 @@
         <Label Content="Patches:" x:Name="PatchesLabel" HorizontalAlignment="Left" Height="25" Margin="479,0,0,17" VerticalAlignment="Bottom" Width="54" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <TextBox x:Name="Patches_TextBox" HorizontalAlignment="Left" Height="20" Margin="528,0,0,18" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="66" Panel.ZIndex="1"/>
         <Button Content="Delete All" x:Name="DeleteButton" HorizontalAlignment="Right" Height="29" Margin="0,0,583,12" VerticalAlignment="Bottom" Width="72" Click="DeleteAllButtonFunction" Panel.ZIndex="1"/>
+        <CheckBox Content="Edit Mode" x:Name="EditMode" HorizontalAlignment="Left" IsChecked="False" Margin="1622,0,0,19" VerticalAlignment="Bottom" Checked="EnableEditMode" Unchecked="DisableEditMode"/>
+        <ComboBox Name="ClassChooser"  HorizontalAlignment="Left" Height="22" Margin="736,0,0,37" VerticalAlignment="Bottom" Width="102" SelectionChanged="ChangeClassDropDown"/>
+
+
     </Grid>
 
 

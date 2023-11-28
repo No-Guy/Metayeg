@@ -15,12 +15,9 @@ using System.IO;
 using static System.Windows.Forms.DataFormats;
 using System.Security.Cryptography;
 using System.Windows.Threading;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
-using System;
-using System.Xml.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Drawing;
 using Metayeg;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace WpfApp1
 {
@@ -31,6 +28,7 @@ namespace WpfApp1
     {
         public static Dictionary<int, (string, RectColor)> classes = new Dictionary<int, (string, RectColor)>();
         private DispatcherTimer timer;
+        private DispatcherTimer Dragtimer;
         public static MainWindow Singleton;
         public MainWindow()
         {
@@ -42,8 +40,11 @@ namespace WpfApp1
             Opened.MouseDown += Opened_MouseDown;
             Opened.MouseUp += Opened_MouseUp;
             timer = new DispatcherTimer();
+            Dragtimer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromMilliseconds(10); // Adjust the interval as needed
             timer.Tick += UpdateMouseHeld;
+            Dragtimer.Interval = TimeSpan.FromMilliseconds(10);
+            Dragtimer.Tick += UpdateDragRect;
             LoadLabel = true;
             LoadLablingCB.IsChecked = true;
 
@@ -95,7 +96,7 @@ namespace WpfApp1
         public static (double, double)[] SelectedLocations = new (double, double)[2];
         public static int CurrentID = 0;
         public static System.Windows.Controls.Image[] LocationImages = new System.Windows.Controls.Image[2];
-        private System.Windows.Controls.Image? CurrentRect;
+        public System.Windows.Controls.Image? CurrentRect;
         //public static List<System.Windows.Controls.Image> RectImages = new List<System.Windows.Controls.Image>();
         //public static List<YOLORect> CreatedRectangles = new List<YOLORect>();
         public int RectCount = 0;
@@ -106,7 +107,7 @@ namespace WpfApp1
         {
             DontSaveRect();
             ResetLocations(true);
-            RectText.DestroyAll();
+            //RectText.DestroyAll();
             LastRect.Content = "";
             PixelLocation.Content = "";
             LocationImages = new System.Windows.Controls.Image[2];
@@ -174,6 +175,7 @@ namespace WpfApp1
                             }
                         }
                     }
+                    SetClassChooser();
                 }
                 catch
                 {
@@ -181,6 +183,43 @@ namespace WpfApp1
                 }
             }
 
+        }
+        public static Dictionary<string, int> ClassesOptions;
+        public void SetClassChooser()
+        {
+            ClassesOptions = new Dictionary<string, int>();
+            List<string> options = new List<string>();
+            string? Class0 = null;
+            int firstClass = 0;
+            foreach (var KV in classes)
+            {
+                string name = $"{KV.Value.Item1}({KV.Key})";
+                options.Add(name);
+                if(Class0 == null)
+                {
+                    Class0 = name;
+                    firstClass = KV.Key;
+                }
+                ClassesOptions[name] = KV.Key;
+            }
+            ClassChooser.ItemsSource = options;
+            ClassChooser.SelectedItem = Class0;
+
+            CurrentClass = firstClass;
+            Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+            ChangeClassColor();
+        }
+        private void ChangeClassDropDown(object sender, SelectionChangedEventArgs e)
+        {
+            // Get the selected item
+            System.Windows.Controls.ComboBox comboBox = sender as System.Windows.Controls.ComboBox;
+            string? selectedOption = comboBox.SelectedItem as string;
+            if(selectedOption != null)
+            {
+                CurrentClass = ClassesOptions[selectedOption];
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+                ChangeClassColor();
+            }
         }
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -226,6 +265,8 @@ namespace WpfApp1
                 var Path = System.IO.Path.Combine(labelsFolder, ImageObj.Shown.name + ".txt");
                 if (File.Exists(Path))
                 {
+                    RectText.DestroyAll();
+                    
                     try
                     {
                         using (StreamReader reader = new StreamReader(Path))
@@ -248,7 +289,6 @@ namespace WpfApp1
                                         var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var corner1 = (x + w / 2, y + h / 2);
                                         var corner2 = (x - w / 2, y - h / 2);
-
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
                                         BuildRectEXT(offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft), Rect);
                                     }
@@ -259,6 +299,7 @@ namespace WpfApp1
                     }
                     catch { }
                 }
+                
             }
         }
         public ((double, double), (double, double)) YoloRectToCorners(YOLORect r)
@@ -310,10 +351,12 @@ namespace WpfApp1
             {
                 if (sender == NextButton)
                 {
+                    Export();
                     ImageObj.ShownInt++;
                 }
                 else
                 {
+                    RectText.DestroyAll();
                     ImageObj.ShownInt--;
                 }
 
@@ -363,11 +406,13 @@ namespace WpfApp1
                 PixelLocation.Content = $"Selected Location: {(round(inImage((mousePosition.X, mousePosition.Y)).Item1), round(inImage((mousePosition.X, mousePosition.Y)).Item2))}";
             }
         }
+        
 
         private void Opened_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (ImageObj.Shown != null && e.ChangedButton == MouseButton.Left)
             {
+                ChangeCompletedCollision(false);
                 if (CurrentID == 2)
                 {
                     ResetLocations();
@@ -382,7 +427,7 @@ namespace WpfApp1
                 timer.Start();
 
             }
-            else if (e.ChangedButton == MouseButton.Right && CurrentID == 2)
+            else if (e.ChangedButton == MouseButton.Right && CurrentID == 2 )
             {
                 CompleteRect();
             }
@@ -391,7 +436,7 @@ namespace WpfApp1
 
         private void Opened_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (ImageObj.Shown != null && e.ChangedButton == MouseButton.Left && mousehold)
+            if (ImageObj.Shown != null && e.ChangedButton == MouseButton.Left && mousehold && !Dragtimer.IsEnabled)
             {
                 mousehold = false;
                 timer.Stop();
@@ -399,9 +444,20 @@ namespace WpfApp1
                 DontSaveRect();
                 GetLocation(sender, e);
             }
+            
+            if (CurrentRect != null)
+            {
+                CurrentRect.IsHitTestVisible = SelectedID == -1;
+            }
+            
+        }
+        public static void print(object message)
+        {
+            System.Windows.MessageBox.Show(message.ToString());
         }
         private void SelectX(object sender, RoutedEventArgs e)
         {
+            ChangeCompletedCollision(false);
             int vid = -1;
             for (int i = 0; i < LocationImages.Length; i++)
             {
@@ -417,6 +473,10 @@ namespace WpfApp1
                 LocationImages[vid].IsHitTestVisible = false;
                 mousehold = true;
                 timer.Start();
+                if (CurrentRect != null)
+                {
+                    CurrentRect.IsHitTestVisible = SelectedID == -1;
+                }
             }
         }
         private void UpdateMouseHeld(object sender, EventArgs e)
@@ -440,6 +500,7 @@ namespace WpfApp1
             }
         }
         private bool mousehold = true;
+
         //MouseDown="GetLocation"
         private void GetLocation(object sender, MouseButtonEventArgs e)
         {
@@ -452,6 +513,7 @@ namespace WpfApp1
                 }
                 if (ImageObj.Shown != null)
                 {
+                    ChangeCompletedCollision(false);
                     System.Windows.Point mousePosition = e.GetPosition(Opened);
 
                     double imageWidth = Opened.ActualWidth;
@@ -466,6 +528,42 @@ namespace WpfApp1
                     UpdateLocations();
                 }
             }
+
+        }
+        private void GenericMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && Dragtimer.IsEnabled)
+            {
+                Dragtimer.Stop();
+            }
+        }
+        private (double, double) StartingDragLocation;
+        private void DragStart(object sender, MouseButtonEventArgs e){
+            //print(CollisionStatus);
+            ///System.Windows.MessageBox.Show("Drag Satart");
+            if (e.ChangedButton == MouseButton.Right)
+            {
+                CompleteRect();
+            }
+            else if(e.ChangedButton == MouseButton.Left)
+            {
+                ResetLocations(false);
+                StartingDragLocation = (Mouse.GetPosition(Opened).X,Mouse.GetPosition(Opened).Y);
+                Dragtimer.Start();
+            }
+        }
+        private void UpdateDragRect(object sender, EventArgs e)
+        {
+            (double, double) DeltaLocation = (Mouse.GetPosition(Opened).X - StartingDragLocation.Item1, Mouse.GetPosition(Opened).Y - StartingDragLocation.Item2);
+            SelectedLocations[0] = (SelectedLocations[0].Item1 + DeltaLocation.Item1, SelectedLocations[0].Item2 + DeltaLocation.Item2);
+            SelectedLocations[1] = (SelectedLocations[1].Item1 + DeltaLocation.Item1, SelectedLocations[1].Item2 + DeltaLocation.Item2);
+            ProjGrid.Children.Remove(LocationImages[0]);
+            ProjGrid.Children.Remove(LocationImages[1]);
+            //ResetLocations();
+            DontSaveRect();
+            UpdateLocations();
+            
+            StartingDragLocation = (Mouse.GetPosition(Opened).X, Mouse.GetPosition(Opened).Y);
 
         }
         public (double, double) inImage((double, double) mouse_position)
@@ -534,7 +632,7 @@ namespace WpfApp1
                 BuildRect();
             }
         }
-        private void ResetLocations(bool ResetCID = true)
+        public void ResetLocations(bool ResetCID = true)
         {
             if (ResetCID)
             {
@@ -565,11 +663,11 @@ namespace WpfApp1
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
             CurrentRect = i;
-
+            i.MouseDown += DragStart;
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
             setRectColor(i, 255, 0, 0, 1);
-
+            ChangeCompletedCollision(SelectedID == -1);
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
             LastRect.Content = $"Current: (({Math.Round(corner1.Item1)},{Math.Round(corner1.Item2)}), ({Math.Round(corner2.Item1)},{Math.Round(corner2.Item2)}))";
@@ -585,6 +683,7 @@ namespace WpfApp1
             i.Margin = new Thickness(cor1.Item1 - i.Width * ((cor1.Item1 > cor2.Item1) ? 1 : 0), cor1.Item2 - i.Height * ((cor1.Item2 > cor2.Item2) ? 1 : 0), 0, 0);
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
+            i.MouseDown += DragStart;
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
             if (!classes.ContainsKey(c))
@@ -646,6 +745,9 @@ namespace WpfApp1
         {
             setRectColor(CurrentRect, classes[CurrentClass].Item2.r, classes[CurrentClass].Item2.g, classes[CurrentClass].Item2.b, MARGINWIDTH, classes[CurrentClass].Item2.a);
             ResetLocations();
+            
+            CurrentRect.MouseDown += ResetRect;
+            CurrentRect.MouseDown -= DragStart;
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
             double Width = ((double)Math.Abs(corner1.Item1 - corner2.Item1)) / Opened.Source.Width;
@@ -653,6 +755,7 @@ namespace WpfApp1
             double x = (((double)Math.Abs(corner1.Item1 + corner2.Item1)) / 2d) / Opened.Source.Width;
             double y = (((double)Math.Abs(corner1.Item2 + corner2.Item2)) / 2d) / Opened.Source.Height;
             RectCount++;
+            CurrentRect.IsHitTestVisible = EditModeFlag;
             new RectText(new YOLORect(x, y, Width, Height, CurrentClass), CurrentRect);
             CurrentRect = null;
             LastRect.Content = $"Last: <x: {Math.Round(x, 2)},y: {Math.Round(y, 2)},w: {Math.Round(Width, 2)},h: {Math.Round(Height, 2)}, c: {CurrentClass}>";
@@ -670,6 +773,39 @@ namespace WpfApp1
             CBLF();
 
 
+        }
+        public static bool EditModeFlag = false;
+        private void EnableEditMode(object sender, RoutedEventArgs e)
+        {
+            EditModeFlag = true;
+            ChangeCompletedCollision(true);
+        }
+        private static bool CollisionStatus = false;
+        public static void ChangeCompletedCollision(bool b)
+        {
+            b = b && EditModeFlag;
+            if (b != CollisionStatus)
+            {
+                foreach (var Rect in RectText.Rectangles)
+                {
+                    Rect.image.IsHitTestVisible = b;
+                    Rect.image.MouseDown += Singleton.ResetRect;
+                }
+                CollisionStatus = b;
+            }
+
+        }
+        private void ResetRect(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                ((RectText)((System.Windows.Controls.Image)sender).Tag).EditRect();
+            }
+        }
+        private void DisableEditMode(object sender, RoutedEventArgs e)
+        {
+            EditModeFlag = false;
+            ChangeCompletedCollision(false);
         }
         private void ChangeClassColor()
         {
@@ -751,6 +887,12 @@ namespace WpfApp1
             string[] lines = File.ReadAllLines(ClassesFilePath);
             int SelectedLine = -1;
             int i = 0;
+            string modname = $"{name}({number})";
+            ClassesOptions[modname] = number;
+            var e = ClassChooser.ItemsSource;
+            var f = (List<string>)e;
+            f.Add(modname);
+            ClassChooser.ItemsSource = f;
             foreach (string line in lines)
             {
                 if (int.TryParse(line.Split(' ')[1], out int lineclass))
@@ -796,6 +938,10 @@ namespace WpfApp1
             textBox.Text = "";
         }
         public void Export(object sender, RoutedEventArgs e)
+        {
+            Export();
+        }
+        public void Export()
         {
             if (PATH != "" && RectText.Rectangles.Count > 0)
             {

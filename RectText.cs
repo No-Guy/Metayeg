@@ -17,7 +17,7 @@ namespace Metayeg
     {
         public YOLORect Data;
         public System.Windows.Controls.Label label;
-        System.Windows.Controls.Image image;
+        public System.Windows.Controls.Image image;
 
         public static int location = 0;
 
@@ -27,6 +27,7 @@ namespace Metayeg
             label = new System.Windows.Controls.Label();
             Data = d;
             label.Tag = this;
+            i.Tag = this;
             label.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             label.HorizontalAlignment = System.Windows.HorizontalAlignment.Right;
             label.MouseEnter += OnMouseEnter;
@@ -90,14 +91,25 @@ namespace Metayeg
             if (l != null && e.ChangedButton == MouseButton.Left && CurrentID == 0)
             {
                 var ThisRect = ((RectText)l.Tag);
-                ThisRect.Destroy();
-                var cors = Singleton.YoloRectToCorners(ThisRect.Data);
-                SelectedLocations[0] = cors.Item1;
-                SelectedLocations[1] = cors.Item2;
-                Singleton.UpdateLocations(2);
-                CurrentID = 1;
-                SelectedID = -1;
+                ThisRect.EditRect();
             }
+        }
+        public void EditRect()
+        {
+            if(Singleton.CurrentRect != null)
+            {
+                Singleton.ResetLocations(false);
+                Singleton.DontSaveRect();
+            }
+            Destroy();
+            var cors = Singleton.YoloRectToCorners(Data);
+            SelectedLocations[0] = cors.Item1;
+            SelectedLocations[1] = cors.Item2;
+            Singleton.UpdateLocations(2);
+            
+            CurrentID = 2;
+            SelectedID = -1;
+            Singleton.CurrentRect.IsHitTestVisible = true;
         }
         private static void OnMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
             
