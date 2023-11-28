@@ -684,6 +684,8 @@ namespace WpfApp1
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
             i.MouseDown += DragStart;
+            i.MouseEnter += RectMouseEnter;
+            i.MouseLeave += RectMouseLeave;
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
             if (!classes.ContainsKey(c))
@@ -747,6 +749,8 @@ namespace WpfApp1
             ResetLocations();
             
             CurrentRect.MouseDown += ResetRect;
+            CurrentRect.MouseEnter += RectMouseEnter;
+            CurrentRect.MouseLeave += RectMouseLeave;
             CurrentRect.MouseDown -= DragStart;
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
@@ -759,6 +763,16 @@ namespace WpfApp1
             new RectText(new YOLORect(x, y, Width, Height, CurrentClass), CurrentRect);
             CurrentRect = null;
             LastRect.Content = $"Last: <x: {Math.Round(x, 2)},y: {Math.Round(y, 2)},w: {Math.Round(Width, 2)},h: {Math.Round(Height, 2)}, c: {CurrentClass}>";
+        }
+        public void RectMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (CurrentID == 0) {
+                RectText.OnMouseEnter(((RectText)((System.Windows.Controls.Image)sender).Tag).label, e);
+            }
+        }
+        public void RectMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            RectText.OnMouseLeave(((RectText)((System.Windows.Controls.Image)sender).Tag).label, e);
         }
         public static int round(double x)
         {

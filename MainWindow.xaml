@@ -16,7 +16,7 @@
         <Button Content="Save" HorizontalAlignment="Right" Height="40" Margin="0,0,10,7" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1" FontSize="24"/>
         <Button Content="Previous" Name="PreviousButton" HorizontalAlignment="Left" Height="30" Margin="873,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
         <Button Content="Next" Name="NextButton" HorizontalAlignment="Left" Height="29" Margin="980,0,0,12" VerticalAlignment="Bottom" Width="72" Click="NextPrev" Panel.ZIndex="1"/>
-        <TextBox Name="Class_TextBox" HorizontalAlignment="Left" Height="20" Margin="736,0,0,17" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="102" LostFocus="ClassBox_LostFocus" GotFocus="ClassBox_GotFocus" Panel.ZIndex="1"/>
+        <TextBox Name="Class_TextBox" HorizontalAlignment="Left" Height="20" Margin="740,0,0,26" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="102" LostFocus="ClassBox_LostFocus" GotFocus="ClassBox_GotFocus" Panel.ZIndex="1"/>
         <Label Content="Class:" x:Name="Class_Text" HorizontalAlignment="Left" Height="25" Margin="700,0,0,16" VerticalAlignment="Bottom" Width="40" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <CheckBox Content="Load Labeling" Name="LoadLablingCB" HorizontalAlignment="Left" IsChecked="True" Margin="599,0,0,20" VerticalAlignment="Bottom" Checked="Load_Checked" Unchecked="Load_Checked"/>
         <Image Name ="ClassColor"  HorizontalAlignment="Left" Height="20" Margin="845,0,0,17" VerticalAlignment="Bottom" Width="20" />
@@ -26,7 +26,7 @@
         <TextBox x:Name="Patches_TextBox" HorizontalAlignment="Left" Height="20" Margin="528,0,0,18" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="66" Panel.ZIndex="1"/>
         <Button Content="Delete All" x:Name="DeleteButton" HorizontalAlignment="Right" Height="29" Margin="0,0,583,12" VerticalAlignment="Bottom" Width="72" Click="DeleteAllButtonFunction" Panel.ZIndex="1"/>
         <CheckBox Content="Edit Mode" x:Name="EditMode" HorizontalAlignment="Left" IsChecked="False" Margin="1622,0,0,19" VerticalAlignment="Bottom" Checked="EnableEditMode" Unchecked="DisableEditMode"/>
-        <ComboBox Name="ClassChooser"  HorizontalAlignment="Left" Height="22" Margin="736,0,0,37" VerticalAlignment="Bottom" Width="102" SelectionChanged="ChangeClassDropDown"/>
+        <ComboBox Name="ClassChooser"  HorizontalAlignment="Left" Height="22" Margin="740,0,0,4" VerticalAlignment="Bottom" Width="102" SelectionChanged="ChangeClassDropDown"/>
 
 
     </Grid>

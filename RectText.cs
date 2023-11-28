@@ -111,7 +111,7 @@ namespace Metayeg
             SelectedID = -1;
             Singleton.CurrentRect.IsHitTestVisible = true;
         }
-        private static void OnMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        public static void OnMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
             
         {
             var l = sender as System.Windows.Controls.Label;
@@ -126,7 +126,7 @@ namespace Metayeg
             
         }
         
-        private static void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        public static void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var l = sender as System.Windows.Controls.Label;
             if (l != null)

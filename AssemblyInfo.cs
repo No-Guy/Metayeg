@@ -10,4 +10,4 @@ using System.Windows;
                                                 // app, or any theme specific resource dictionaries)
 )]
 [assembly: AssemblyCopyright("Guy Levy")]
-//[assembly: AssemblyTitle("Metayeg")]
+// [assembly: AssemblyTitle("Metayeg")]
