@@ -10,6 +10,7 @@
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<ApplicationIcon>icon.ico</ApplicationIcon>
 	<AssemblyVersion>1.4</AssemblyVersion>
+	<FileVersion>1.8</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -32,7 +32,6 @@ namespace Metayeg
             label.HorizontalAlignment = System.Windows.HorizontalAlignment.Right;
             label.MouseEnter += OnMouseEnter;
             label.MouseDown += OnMouseDown;
-            // Subscribe to the MouseLeave event
             label.MouseLeave += OnMouseLeave;
             label.Width = Singleton.SidebarTitle.Width;
             label.Height = Singleton.SidebarTitle.Height;
@@ -102,11 +101,20 @@ namespace Metayeg
                 Singleton.DontSaveRect();
             }
             Destroy();
-            var cors = Singleton.YoloRectToCorners(Data);
+            ((double, double), (double, double)) cors;
+            if(Data.Cor1 != (-1,-1))
+            {
+                cors = (Data.Cor1, Data.Cor2);
+                //cors = Singleton.YoloRectToCorners(Data);
+            }
+            else
+            {
+                cors = Singleton.YoloRectToCorners(Data);
+            }
             SelectedLocations[0] = cors.Item1;
             SelectedLocations[1] = cors.Item2;
             Singleton.UpdateLocations(2);
-            
+            Singleton.ChangeClass(Data.c);
             CurrentID = 2;
             SelectedID = -1;
             Singleton.CurrentRect.IsHitTestVisible = true;

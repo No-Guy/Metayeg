@@ -20,7 +20,7 @@
         <Label Content="Class:" x:Name="Class_Text" HorizontalAlignment="Left" Height="25" Margin="700,0,0,16" VerticalAlignment="Bottom" Width="40" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <CheckBox Content="Load Labeling" Name="LoadLablingCB" HorizontalAlignment="Left" IsChecked="True" Margin="599,0,0,20" VerticalAlignment="Bottom" Checked="Load_Checked" Unchecked="Load_Checked"/>
         <Image Name ="ClassColor"  HorizontalAlignment="Left" Height="20" Margin="845,0,0,17" VerticalAlignment="Bottom" Width="20" />
-        <Label Name ="SidebarTitle" Content="Resulting file" HorizontalAlignment="Right" Height="30" Margin="1721,10,0,0" VerticalAlignment="Top" Width="189" Panel.ZIndex="2" HorizontalContentAlignment ="Center" FontSize="14"/>
+        <Label Name ="SidebarTitle" Content="RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" HorizontalAlignment="Right" Height="30" Margin="1721,10,0,0" VerticalAlignment="Top" Width="189" Panel.ZIndex="2" HorizontalContentAlignment ="Center" FontSize="8"/>
         <Button Content="Run Yolo" Name="RunYoloButton" HorizontalAlignment="Left" Height="29" Margin="361,0,0,14" VerticalAlignment="Bottom" Width="101" Click="CallToYoloIT" Panel.ZIndex="1" FontSize="20"/>
         <Label Content="Patches:" x:Name="PatchesLabel" HorizontalAlignment="Left" Height="25" Margin="479,0,0,17" VerticalAlignment="Bottom" Width="54" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <TextBox x:Name="Patches_TextBox" HorizontalAlignment="Left" Height="20" Margin="528,0,0,18" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="66" Panel.ZIndex="1"/>

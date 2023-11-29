@@ -56,16 +56,29 @@ namespace WpfApp1
             public double x, y;
             public double w, h;
             public int c;
-            public YOLORect(double x0, double y0, double w0, double h0, int c0 = 0)
+
+            public (double, double) Cor1;
+            public (double, double) Cor2;
+            public YOLORect(double x0, double y0, double w0, double h0, int c0)
             {
                 x = x0;
                 y = y0;
                 w = w0;
                 h = h0;
                 c = c0;
-
+                Cor1 = (-1,-1);
+                Cor2 = (-1,-1);
             }
-
+            public YOLORect(double x0, double y0, double w0, double h0, int c0, (double, double) S1, (double, double) S2)
+            {
+                x = x0;
+                y = y0;
+                w = w0;
+                h = h0;
+                c = c0;
+                Cor1 = S1;
+                Cor2 = S2;
+            }
             public override string ToString()
             {
                 return $"{(int)c} {Math.Round(x, 4)} {Math.Round(y, 4)} {Math.Round(w, 4)} {Math.Round(h, 4)}";
@@ -115,6 +128,7 @@ namespace WpfApp1
             CurrentID = 0;
             SelectedID = -1;
             SidebarTitle.Content = "";
+            /*
             CurrentClass = 0;
             if (classes.ContainsKey(CurrentClass))
             {
@@ -125,7 +139,25 @@ namespace WpfApp1
             {
                 Class_TextBox.Text = $"{CurrentClass}(unknown)";
             }
-
+            */
+        }
+        public void ChangeClass(int c)
+        {
+            
+            if (classes.ContainsKey(c))
+            {
+                CurrentClass = c;
+                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
+                ChangeClassColor();
+                foreach (var KV in ClassesOptions)
+                {
+                    if(KV.Value == c)
+                    {
+                        ClassChooser.SelectedItem = KV.Key;
+                    }
+                }
+                
+            }
         }
         public void LoadClasses()
         {
@@ -251,6 +283,20 @@ namespace WpfApp1
             if (ImageObj.Shown != null)
             {
                 SidebarTitle.Content = ImageObj.Shown.name + ".txt";
+                int charcount = ImageObj.Shown.name.Length;
+                if (charcount < 22)
+                {
+                    SidebarTitle.FontSize = 14;
+                }
+                else if(charcount < 26)
+                {
+                    SidebarTitle.FontSize = 12;
+                }
+                else if( charcount < 31)
+                {
+                    SidebarTitle.FontSize = 10;
+                }
+
             }
             else
             {
@@ -279,18 +325,20 @@ namespace WpfApp1
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
                                     {
+                                        var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
+                                        var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var Rect = new YOLORect(x, y, w, h, cls);
                                         x *= Opened.Source.Width;
                                         w *= Opened.Source.Width;
                                         y *= Opened.Source.Height;
                                         h *= Opened.Source.Height;
 
-                                        var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
-                                        var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
+                                        
                                         var corner1 = (x + w / 2, y + h / 2);
                                         var corner2 = (x - w / 2, y - h / 2);
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
                                         BuildRectEXT(offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft), Rect);
+                                        
                                     }
                                 }
 
@@ -309,6 +357,7 @@ namespace WpfApp1
             w *= Opened.Source.Width;
             y *= Opened.Source.Height;
             h *= Opened.Source.Height;
+            x -= 11; y -= 11;   //test
 
             var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
             var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
@@ -493,11 +542,17 @@ namespace WpfApp1
                 double imageWidth = Opened.ActualWidth;
                 double imageHeight = Opened.ActualHeight;
 
-                int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
-                int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
-                SelectedLocations[SelectedID] = (mousePosition.X, mousePosition.Y);
+                //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
+                //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
+               
+                SelectedLocations[SelectedID] = ClampMousePosition((mousePosition.X, mousePosition.Y));
                 UpdateLocations(CurrentID + 1);
             }
+        }
+        private (double,double) ClampMousePosition((double, double ) mousePosition)
+        {
+            var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
+            return (Math.Clamp(mousePosition.Item1, 0, inapp.Item1), Math.Clamp(mousePosition.Item2, 0, inapp.Item2));
         }
         private bool mousehold = true;
 
@@ -521,7 +576,7 @@ namespace WpfApp1
 
                     //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
                     //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
-                    SelectedLocations[SelectedID] = (mousePosition.X, mousePosition.Y);
+                    SelectedLocations[SelectedID] = ClampMousePosition((mousePosition.X, mousePosition.Y));
                     //PixelLocation.Content = $"Selected Location: {inImage(SelectedLocations[CurrentID])}";
                     CurrentID++;
                     SelectedID = -1;
@@ -535,6 +590,10 @@ namespace WpfApp1
             if (e.ChangedButton == MouseButton.Left && Dragtimer.IsEnabled)
             {
                 Dragtimer.Stop();
+            }
+            if(e.ChangedButton == MouseButton.Left && timer.IsEnabled)
+            {
+                Opened_MouseUp(sender,e);
             }
         }
         private (double, double) StartingDragLocation;
@@ -586,6 +645,7 @@ namespace WpfApp1
             {
                 cid = CurrentID;
             }
+            
             for (global::System.Int32 j = 0; j < cid; j++)
             {
                 var i = new System.Windows.Controls.Image();
@@ -650,8 +710,17 @@ namespace WpfApp1
                 ProjGrid.Children.Remove(CurrentRect);
             }
         }
+        public void ClampCorners()
+        {
+            var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
+            SelectedLocations[0] = (Math.Clamp(SelectedLocations[0].Item1, 0, inapp.Item1), Math.Clamp(SelectedLocations[0].Item2, 0, inapp.Item2));
+            SelectedLocations[1] = (Math.Clamp(SelectedLocations[1].Item1, 0, inapp.Item1), Math.Clamp(SelectedLocations[1].Item2, 0, inapp.Item2));
+        }
         public void BuildRect()
         {
+            //clamp corners//
+            ClampCorners();
+            //print(SelectedLocations[1]);
             var i = new System.Windows.Controls.Image();
             i.Width = Math.Abs((SelectedLocations[0].Item1 - SelectedLocations[1].Item1));
             i.Height = Math.Abs((SelectedLocations[0].Item2 - SelectedLocations[1].Item2));
@@ -688,6 +757,7 @@ namespace WpfApp1
             i.MouseLeave += RectMouseLeave;
             ProjGrid.Children.Add(i);
             System.Windows.Controls.Panel.SetZIndex(i, 1);
+            i.IsHitTestVisible = SelectedID == -1 && EditModeFlag;
             if (!classes.ContainsKey(c))
             {
                 AddClass(c);
@@ -760,7 +830,7 @@ namespace WpfApp1
             double y = (((double)Math.Abs(corner1.Item2 + corner2.Item2)) / 2d) / Opened.Source.Height;
             RectCount++;
             CurrentRect.IsHitTestVisible = EditModeFlag;
-            new RectText(new YOLORect(x, y, Width, Height, CurrentClass), CurrentRect);
+            new RectText(new YOLORect(x, y, Width, Height, CurrentClass, SelectedLocations[0], SelectedLocations[1]), CurrentRect);
             CurrentRect = null;
             LastRect.Content = $"Last: <x: {Math.Round(x, 2)},y: {Math.Round(y, 2)},w: {Math.Round(Width, 2)},h: {Math.Round(Height, 2)}, c: {CurrentClass}>";
         }
