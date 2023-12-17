@@ -30,6 +30,7 @@ namespace WpfApp1
         
         public static void CreateImages()
         {
+            Images = new List<ImageObj>();
             try
             {
                 // Enumerate files in the directory

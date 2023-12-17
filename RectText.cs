@@ -13,7 +13,7 @@ using static WpfApp1.MainWindow;
 
 namespace Metayeg
 {
-    internal class RectText
+    public class RectText
     {
         public YOLORect Data;
         public System.Windows.Controls.Label label;
@@ -41,6 +41,7 @@ namespace Metayeg
             Rectangles.Add(this);
             image = i;
             UpdateRectTextsLocations();
+            Inside(this);
         }
         public static void UpdateRectTextsLocations()
         {
@@ -62,10 +63,27 @@ namespace Metayeg
                 i++;
             }
         }
+        public static void Inside(RectText Rect1)
+        {
+            
+                foreach (var Rect2 in Rectangles)
+                {
+                    if(Rect1 != Rect2)
+                    {
+                        if (Rect1.Data.x + Rect1.Data.w/2 >= Rect2.Data.x + Rect2.Data.w / 2 && Rect1.Data.x - Rect1.Data.w / 2 <= Rect2.Data.x - Rect2.Data.w / 2 && 
+                            Rect1.Data.y + Rect1.Data.h/2 > Rect2.Data.y + Rect2.Data.h / 2 && Rect1.Data.y - Rect1.Data.h / 2 <= Rect2.Data.y - Rect2.Data.h / 2)  //Rect2 is inside Rect1
+                        {
+                        Singleton.ProjGrid.Children.Remove(Rect2.image);
+                        Singleton.ProjGrid.Children.Add(Rect2.image);
+                        }
+                    }
+                }
+            
+        }
         public static int GetCount()
         {
             
-            return (int)((System.Windows.Application.Current.MainWindow.Height - 130) / 30);
+            return (int)((System.Windows.Application.Current.MainWindow.Height - 65) / 30);
         }
         public static void DestroyAll()
         {
@@ -75,6 +93,24 @@ namespace Metayeg
                 Singleton.ProjGrid.Children.Remove(item.image);
             }
             Rectangles = new List<RectText>();
+        }
+        public static void Regenerate()
+        {
+            foreach (var Rect in Rectangles)
+            {
+                Singleton.ProjGrid.Children.Remove(Rect.image);
+                var offset = (0, 0);
+                var offset2 = (0,0);
+                
+                var corners = Singleton.YoloRectToCorners(Rect.Data);
+
+                var cor1 = (corners.Item1.Item1 + offset.Item1 + offset2.Item1, corners.Item1.Item2 + offset.Item2 + offset2.Item2);
+                var cor2 = (corners.Item2.Item1 + offset.Item1 + offset2.Item1, corners.Item2.Item2 + offset.Item2 + offset2.Item2);
+                Singleton.BuildRectEXT(cor1, cor2, Rect.Data, Rect);
+                Rect.Data.Cor1 = cor1;
+                Rect.Data.Cor2 = cor2;
+            }
+           // print(Rectangles.Count);
         }
         public void Destroy()
         {

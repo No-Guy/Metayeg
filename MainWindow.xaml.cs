@@ -46,11 +46,17 @@ namespace WpfApp1
             Dragtimer.Interval = TimeSpan.FromMilliseconds(10);
             Dragtimer.Tick += UpdateDragRect;
             LoadLabel = true;
-            LoadLablingCB.IsChecked = true;
-
-
+            //LoadLablingCB.IsChecked = true;
+            OriginalImageSize = new Vector(Opened.Width, Opened.Height);
+            OriginalWindowSize = new Vector(Width, Height);
+            //OriginalOffset2 = offset2((0, 0));
 
         }
+        public static Vector OriginalImageSize;
+
+        public static (double,double) OriginalOffset2;
+
+        public static Vector OriginalWindowSize;
         public struct YOLORect
         {
             public double x, y;
@@ -128,6 +134,7 @@ namespace WpfApp1
             CurrentID = 0;
             SelectedID = -1;
             SidebarTitle.Content = "";
+            
             /*
             CurrentClass = 0;
             if (classes.ContainsKey(CurrentClass))
@@ -302,6 +309,7 @@ namespace WpfApp1
             {
                 SidebarTitle.Content = "";
             }
+            UpdateImageCounter();
             //}
         }
         public void TryLoad()
@@ -337,7 +345,7 @@ namespace WpfApp1
                                         var corner1 = (x + w / 2, y + h / 2);
                                         var corner2 = (x - w / 2, y - h / 2);
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
-                                        BuildRectEXT(offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft), Rect);
+                                        BuildRectEXT(offset(inApp(corner1)), offset(inApp(corner2)), Rect);
                                         
                                     }
                                 }
@@ -363,12 +371,21 @@ namespace WpfApp1
             var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
             var corner1 = (x + w / 2, y + h / 2);
             var corner2 = (x - w / 2, y - h / 2);
-            return (offset(inApp(corner1), topLeft, globaltopleft), offset(inApp(corner2), topLeft, globaltopleft));
+            return (offset(inApp(corner1)), offset(inApp(corner2)));
 
         }
-        public static (double, double) offset((double, double) a, System.Windows.Point b, System.Windows.Point c)
+        public (double, double) offset((double, double) a)
         {
-            return (a.Item1 + Math.Abs(b.X - c.X), a.Item2 + Math.Abs(b.Y - c.Y));
+            var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
+            var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
+            return (a.Item1 + Math.Abs(topLeft.X - globaltopleft.X), a.Item2 + Math.Abs(topLeft.Y - globaltopleft.Y));
+        }
+        public (double, double) offset2((double, double) a, bool reverse = false)
+        {
+            var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
+            var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
+            var d = topLeft - globaltopleft - new Vector(10, 10);
+            return (a.Item1 + d.X * (reverse ? -1 : 1), a.Item2 + d.Y * (reverse ? -1 : 1));
         }
         private void DeleteLast(object sender, System.Windows.Input.KeyEventArgs e)
         {
@@ -383,6 +400,7 @@ namespace WpfApp1
                     ResetLocations();
                     DontSaveRect();
                 }
+                ChangeCompletedCollision(true);
             }
             if (e.Key == Key.Return && Class_TextBox.IsFocused)
             {
@@ -400,6 +418,10 @@ namespace WpfApp1
             {
                 if (sender == NextButton)
                 {
+                    if (DestroyOnNext)
+                    {
+                        RectText.DestroyAll();
+                    }
                     Export();
                     ImageObj.ShownInt++;
                 }
@@ -432,8 +454,12 @@ namespace WpfApp1
                 {
                     SidebarTitle.Content = "";
                 }
-
+                UpdateImageCounter();
             }
+        }
+        public void UpdateImageCounter()
+        {
+            ImageCounter.Content = $"{ImageObj.ShownInt+1}/{ImageObj.Images.Count}";
         }
         public void DeleteAllButtonFunction(object sender, RoutedEventArgs e)
         {
@@ -491,7 +517,7 @@ namespace WpfApp1
                 timer.Stop();
                 ResetLocations(false);
                 DontSaveRect();
-                GetLocation(sender, e);
+                GetLocation();
             }
             
             if (CurrentRect != null)
@@ -532,65 +558,77 @@ namespace WpfApp1
         {
             if (mousehold)
             {
-
-                //ResetLocations(SelectedID == 0 || SelectedID == 1 );
-                ResetLocations(CurrentID == 2 ? true : false);
-                DontSaveRect();
-                System.Windows.Point mousePosition = new System.Windows.Point();
-                mousePosition = Mouse.GetPosition(Opened);
-                //System.Windows.MessageBox.Show($"{mousePosition}");
-                double imageWidth = Opened.ActualWidth;
-                double imageHeight = Opened.ActualHeight;
-
-                //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
-                //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
-               
-                SelectedLocations[SelectedID] = ClampMousePosition((mousePosition.X, mousePosition.Y));
-                UpdateLocations(CurrentID + 1);
-            }
-        }
-        private (double,double) ClampMousePosition((double, double ) mousePosition)
-        {
-            var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
-            return (Math.Clamp(mousePosition.Item1, 0, inapp.Item1), Math.Clamp(mousePosition.Item2, 0, inapp.Item2));
-        }
-        private bool mousehold = true;
-
-        //MouseDown="GetLocation"
-        private void GetLocation(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                if (CurrentID == 2)
+                if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    ResetLocations();
+                    //ResetLocations(SelectedID == 0 || SelectedID == 1 );
+                    ResetLocations(CurrentID == 2 ? true : false);
                     DontSaveRect();
-                }
-                if (ImageObj.Shown != null)
-                {
-                    ChangeCompletedCollision(false);
-                    System.Windows.Point mousePosition = e.GetPosition(Opened);
-
+                    System.Windows.Point mousePosition = new System.Windows.Point();
+                    mousePosition = Mouse.GetPosition(Opened);
+                    //System.Windows.MessageBox.Show($"{mousePosition}");
                     double imageWidth = Opened.ActualWidth;
                     double imageHeight = Opened.ActualHeight;
 
                     //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
                     //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
+
                     SelectedLocations[SelectedID] = ClampMousePosition((mousePosition.X, mousePosition.Y));
-                    //PixelLocation.Content = $"Selected Location: {inImage(SelectedLocations[CurrentID])}";
-                    CurrentID++;
-                    SelectedID = -1;
-                    UpdateLocations();
+                    UpdateLocations(CurrentID + 1);
+                }
+                else
+                {
+                    mousehold = false;
+                    timer.Stop();
+                    ResetLocations(false);
+                    DontSaveRect();
+                    GetLocation();
                 }
             }
 
         }
+        
+        private (double,double) ClampMousePosition((double, double ) mousePosition)
+        {
+            mousePosition = offset2(mousePosition);
+            var baseoffset2 = offset2((0, 0));
+            var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
+            return (Math.Clamp(mousePosition.Item1, baseoffset2.Item1, inapp.Item1 + baseoffset2.Item1), Math.Clamp(mousePosition.Item2, baseoffset2.Item2, inapp.Item2+ baseoffset2.Item2));
+        }
+        private bool mousehold = true;
+        public void OpenZoomWindow(object sender, RoutedEventArgs e)
+        {
+            var zoomwindow = new Zoomedwindow();
+            zoomwindow.Show();
+        }
+        //MouseDown="GetLocation"
+        private void GetLocation()
+        {
+            if (CurrentID == 2)
+            {
+                ResetLocations();
+                DontSaveRect();
+            }
+            if (ImageObj.Shown != null && SelectedID != -1)
+            {
+                ChangeCompletedCollision(false);
+                System.Windows.Point mousePosition = Mouse.GetPosition(Opened);
+
+                double imageWidth = Opened.ActualWidth;
+                double imageHeight = Opened.ActualHeight;
+
+                //int xInImage = round((mousePosition.X / imageWidth) * Opened.Source.Width);
+                //int yInImage = round((mousePosition.Y / imageHeight) * Opened.Source.Height);
+                SelectedLocations[SelectedID] = ClampMousePosition((mousePosition.X, mousePosition.Y));
+                //PixelLocation.Content = $"Selected Location: {inImage(SelectedLocations[CurrentID])}";
+                CurrentID++;
+                SelectedID = -1;
+                UpdateLocations();
+            }
+            
+
+        }
         private void GenericMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left && Dragtimer.IsEnabled)
-            {
-                Dragtimer.Stop();
-            }
             if(e.ChangedButton == MouseButton.Left && timer.IsEnabled)
             {
                 Opened_MouseUp(sender,e);
@@ -609,24 +647,35 @@ namespace WpfApp1
                 ResetLocations(false);
                 StartingDragLocation = (Mouse.GetPosition(Opened).X,Mouse.GetPosition(Opened).Y);
                 Dragtimer.Start();
+                ChangeCompletedCollision(false);
             }
         }
         private void UpdateDragRect(object sender, EventArgs e)
         {
-            (double, double) DeltaLocation = (Mouse.GetPosition(Opened).X - StartingDragLocation.Item1, Mouse.GetPosition(Opened).Y - StartingDragLocation.Item2);
-            SelectedLocations[0] = (SelectedLocations[0].Item1 + DeltaLocation.Item1, SelectedLocations[0].Item2 + DeltaLocation.Item2);
-            SelectedLocations[1] = (SelectedLocations[1].Item1 + DeltaLocation.Item1, SelectedLocations[1].Item2 + DeltaLocation.Item2);
-            ProjGrid.Children.Remove(LocationImages[0]);
-            ProjGrid.Children.Remove(LocationImages[1]);
-            //ResetLocations();
-            DontSaveRect();
-            UpdateLocations();
-            
-            StartingDragLocation = (Mouse.GetPosition(Opened).X, Mouse.GetPosition(Opened).Y);
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                var clampedmousepos = (Mouse.GetPosition(Opened).X, Mouse.GetPosition(Opened).Y);
+                (double, double) DeltaLocation = (clampedmousepos.Item1 - StartingDragLocation.Item1, clampedmousepos.Item2 - StartingDragLocation.Item2);
+                SelectedLocations[0] = (SelectedLocations[0].Item1 + DeltaLocation.Item1, SelectedLocations[0].Item2 + DeltaLocation.Item2);
+                SelectedLocations[1] = (SelectedLocations[1].Item1 + DeltaLocation.Item1, SelectedLocations[1].Item2 + DeltaLocation.Item2);
+                ProjGrid.Children.Remove(LocationImages[0]);
+                ProjGrid.Children.Remove(LocationImages[1]);
+                //ResetLocations();
+                DontSaveRect();
+                UpdateLocations();
+
+                StartingDragLocation = (Mouse.GetPosition(Opened).X, Mouse.GetPosition(Opened).Y);
+            }
+            else
+            {
+                ChangeCompletedCollision(CurrentID == 0);
+                Dragtimer.Stop();
+            }
 
         }
         public (double, double) inImage((double, double) mouse_position)
         {
+            mouse_position = offset2(mouse_position, true);
             double imageWidth = Opened.ActualWidth;
             double imageHeight = Opened.ActualHeight;
             return ((mouse_position.Item1 / imageWidth) * Opened.Source.Width, (mouse_position.Item2 / imageHeight) * Opened.Source.Height);
@@ -681,6 +730,7 @@ namespace WpfApp1
                 double imageX = (SelectedLocations[j].Item1);// * Opened.ActualWidth / Main_Window.ActualWidth);// + i.Width / 2;
                 double imageY = (SelectedLocations[j].Item2);// + i.Height / 2;
 
+                //var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
                 // Update the image's position
                 i.Margin = new Thickness(imageX, imageY, 0, 0);
 
@@ -713,8 +763,9 @@ namespace WpfApp1
         public void ClampCorners()
         {
             var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
-            SelectedLocations[0] = (Math.Clamp(SelectedLocations[0].Item1, 0, inapp.Item1), Math.Clamp(SelectedLocations[0].Item2, 0, inapp.Item2));
-            SelectedLocations[1] = (Math.Clamp(SelectedLocations[1].Item1, 0, inapp.Item1), Math.Clamp(SelectedLocations[1].Item2, 0, inapp.Item2));
+            var valoffset = offset2((0, 0));
+            SelectedLocations[0] = (Math.Clamp(SelectedLocations[0].Item1, valoffset.Item1, inapp.Item1+ valoffset.Item1), Math.Clamp(SelectedLocations[0].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
+            SelectedLocations[1] = (Math.Clamp(SelectedLocations[1].Item1, valoffset.Item1, inapp.Item1+ valoffset.Item1), Math.Clamp(SelectedLocations[1].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
         }
         public void BuildRect()
         {
@@ -741,7 +792,7 @@ namespace WpfApp1
             var corner2 = inImage(SelectedLocations[1]);
             LastRect.Content = $"Current: (({Math.Round(corner1.Item1)},{Math.Round(corner1.Item2)}), ({Math.Round(corner2.Item1)},{Math.Round(corner2.Item2)}))";
         }
-        public void BuildRectEXT((double, double) cor1, (double, double) cor2, YOLORect r)
+        public void BuildRectEXT((double, double) cor1, (double, double) cor2, YOLORect r, RectText? Obj = null)
         {
             int c = r.c;
             var i = new System.Windows.Controls.Image();
@@ -763,7 +814,14 @@ namespace WpfApp1
                 AddClass(c);
             }
             setRectColor(i, classes[c].Item2);
-            new RectText(r, i);
+            if (Obj == null)
+            {
+                new RectText(r, i);
+            }
+            else
+            {
+                Obj.image = i;
+            }
         }
         public static void setRectColor(System.Windows.Controls.Image i, RectColor C, int mw = -1)
         {
@@ -1055,15 +1113,40 @@ namespace WpfApp1
             }
 
         }
-
+        public static bool DestroyOnNext = false;
         private void Load_Checked(object sender, RoutedEventArgs e)
         {
             LoadLabel = !LoadLabel;
+        }
+        private void DestroyOnNextToggle(object sender, RoutedEventArgs e)
+        {
+            DestroyOnNext = !DestroyOnNext;
         }
         //v2 changes//
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             RectText.UpdateRectTextsLocations();
+            if (ImageObj.Shown == null)
+            {
+                var w = e.NewSize.Width;
+                var h = e.NewSize.Height;
+                var ratio = OriginalWindowSize.X / OriginalWindowSize.Y;
+                if (w / h > ratio)
+                {
+                    //height is smaller, use it
+                    var mult = h / OriginalWindowSize.Y;
+                    Opened.Width = OriginalImageSize.X * mult;
+                    Opened.Height = OriginalImageSize.Y * mult;
+                }
+                else
+                {
+                    var mult = w / OriginalWindowSize.X;
+                    Opened.Width = OriginalImageSize.X * mult;
+                    Opened.Height = OriginalImageSize.Y * mult;
+                }
+                //RectText.Regenerate();
+            }
+           // print(OriginalImageSize + "  " + OriginalWindowSize);
         }
         private void MainWindow_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
