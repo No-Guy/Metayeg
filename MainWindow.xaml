@@ -20,6 +20,8 @@
                         </ControlTemplate>
                     </MenuItem.Template>
                 </MenuItem>
+                <MenuItem  Header="Delete" Click="DeleteImage" FontSize="12" />
+
             </MenuItem>
             <MenuItem Header="Edit" FontSize="14">
                 <MenuItem Header="Delete All" Click="DeleteAllButtonFunction" FontSize="12"/>
@@ -53,7 +55,8 @@
         <!--Button Content="Delete All" x:Name="DeleteButton" HorizontalAlignment="Right" Height="29" Margin="0,0,583,12" VerticalAlignment="Bottom" Width="72" Click="DeleteAllButtonFunction" Panel.ZIndex="1"/-->
         <CheckBox Content="Edit Mode"  x:Name="EditMode" HorizontalAlignment="Left" IsChecked="False" Margin="1622,0,0,19" VerticalAlignment="Bottom" Checked="EnableEditMode" Unchecked="DisableEditMode"/>
         <ComboBox Name="ClassChooser"  HorizontalAlignment="Left" Height="22" Margin="940,0,0,5" VerticalAlignment="Bottom" Width="102" SelectionChanged="ChangeClassDropDown"/>
-        <Label Content="" Width="67" HorizontalAlignment="Left" VerticalAlignment="Top" Name ="ImageCounter" Margin="941,0,0,0"/>
+        <!--Label Content="a" Width="67" HorizontalAlignment="Left" VerticalAlignment="Top" Name ="ImageCounter" Margin="941,0,0,0"/-->
+        <TextBox x:Name="ImageCounter" HorizontalAlignment="Center" Height="25" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="68" Panel.ZIndex="1" GotFocus="ImageCounterWait" LostFocus="ImageCounterStopWaitWait" KeyDown  ="ImageCounterJump"/>
 
     </Grid>
 

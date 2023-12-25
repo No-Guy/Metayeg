@@ -72,7 +72,31 @@ namespace Metayeg
             }
             MainWindow.Singleton.Patches_TextBox.Text = Patches.ToString();
         }
-        private static void YOLOpatches()
+        public async static void Yolo()
+        {
+            try
+            {
+                MainWindow.Singleton.RunYoloButton.IsEnabled = false;
+                var workpath = Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(ImageObj.Shown.PicturePath));
+                //MessageBox.Show(ImageObj.Shown.PicturePath + " " + Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(ImageObj.Shown.PicturePath)));
+                File.Copy(ImageObj.Shown.PicturePath, workpath);
+                YOLOpatches(false);
+                MessageBox.Show(Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
+                File.Copy(Path.ChangeExtension(workpath, ".txt"), Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
+                File.Delete(workpath);
+                await Task.Delay(10);
+                MainWindow.Singleton.TryLoad();
+
+                MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+
+            }
+            catch
+            {
+                MessageBox.Show("fail");
+            }
+
+        }
+        private static void YOLOpatches(bool rejoin = true)
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo
             {
@@ -99,7 +123,12 @@ namespace Metayeg
 
             // Close the command prompt
             process.Close();
-            Rejoin();
+            if (rejoin)
+            {
+                Rejoin();
+            }
+            MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+            
         }
         private static List<MainWindow.YOLORect> GlobalRects = new List<MainWindow.YOLORect>();
         private static void Rejoin()

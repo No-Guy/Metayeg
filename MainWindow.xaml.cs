@@ -17,6 +17,10 @@ using System.Security.Cryptography;
 using System.Windows.Threading;
 using Metayeg;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System;
+using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.LinkLabel;
+using System.Windows.Forms.VisualStyles;
 
 
 namespace WpfApp1
@@ -134,19 +138,7 @@ namespace WpfApp1
             CurrentID = 0;
             SelectedID = -1;
             SidebarTitle.Content = "";
-            
-            /*
-            CurrentClass = 0;
-            if (classes.ContainsKey(CurrentClass))
-            {
-                Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
-                ChangeClassColor();
-            }
-            else
-            {
-                Class_TextBox.Text = $"{CurrentClass}(unknown)";
-            }
-            */
+
         }
         public void ChangeClass(int c)
         {
@@ -276,7 +268,7 @@ namespace WpfApp1
             ImageObj.CreateImages();
             if (ImageObj.Images.Count > 0)
             {
-                Opened.Source = new BitmapImage(new Uri(ImageObj.Images[0].PicturePath, UriKind.Absolute));
+                SetSource(ImageObj.Images[0].PicturePath);
                 ImageObj.Shown = ImageObj.Images[0];
                 RectText.location = 0;
                 ImageObj.ShownInt = 0;
@@ -314,6 +306,26 @@ namespace WpfApp1
         }
         public void TryLoad()
         {
+            Dictionary<int, int>? transform = null;
+            if (File.Exists(System.IO.Path.Combine(PATH, "_transform.txt")))
+            {
+                using (StreamReader reader = new StreamReader(System.IO.Path.Combine(PATH, "_transform.txt")))
+                {
+                    string line;
+                    transform = new Dictionary<int, int>();
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        var parts = line.Split(" ");
+                        if (parts.Length == 2)
+                        {
+                            if (int.TryParse(parts[0], out int from) && int.TryParse(parts[1], out int to))
+                            {
+                                transform[from] = to;
+                            }
+                        }
+                    }
+                }
+            }
             if (LoadLabel)
             {
                 var Path = System.IO.Path.Combine(labelsFolder, ImageObj.Shown.name + ".txt");
@@ -333,6 +345,20 @@ namespace WpfApp1
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
                                     {
+                                        if(transform != null)
+                                        {
+                                            if (transform.ContainsKey(cls))
+                                            {
+                                                if (cls != -1)
+                                                {
+                                                    cls = transform[cls];
+                                                }
+                                                else
+                                                {
+                                                    continue;
+                                                }
+                                            }
+                                        }
                                         var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
                                         var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var Rect = new YOLORect(x, y, w, h, cls);
@@ -413,17 +439,23 @@ namespace WpfApp1
         }
         public async void NextPrev(object sender, RoutedEventArgs e)
         {
+            NextPrev(sender, e, false);
+        }
+
+        public async void NextPrev(object sender, RoutedEventArgs e, bool DontSaveFlag = false)
+        {
             NewImage();
             if (ImageObj.Images.Count > 1)
             {
                 if (sender == NextButton)
                 {
+                    
+                    Export();
+                    ImageObj.ShownInt++;
                     if (DestroyOnNext)
                     {
                         RectText.DestroyAll();
                     }
-                    Export();
-                    ImageObj.ShownInt++;
                 }
                 else
                 {
@@ -441,7 +473,7 @@ namespace WpfApp1
                 }
                 RectText.location = 0;
                 ImageObj.Shown = ImageObj.Images[ImageObj.ShownInt];
-                Opened.Source = new BitmapImage(new Uri(ImageObj.Shown.PicturePath, UriKind.Absolute));
+                SetSource(ImageObj.Shown.PicturePath);
                 await Task.Delay(100);
                 //RectText.DestroyAll();
                 if (ImageObj.Shown != null)
@@ -457,9 +489,19 @@ namespace WpfApp1
                 UpdateImageCounter();
             }
         }
+        private void SetSource(string path)
+        {
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(path, UriKind.Absolute); // Replace with your image path
+            bitmap.CacheOption = BitmapCacheOption.OnLoad; // Release file lock
+            bitmap.EndInit();
+            Opened.Source = bitmap;
+            //File.Delete(path);
+        }
         public void UpdateImageCounter()
         {
-            ImageCounter.Content = $"{ImageObj.ShownInt+1}/{ImageObj.Images.Count}";
+            ImageCounter.Text = $"{ImageObj.ShownInt+1}/{ImageObj.Images.Count}";
         }
         public void DeleteAllButtonFunction(object sender, RoutedEventArgs e)
         {
@@ -638,7 +680,7 @@ namespace WpfApp1
         private void DragStart(object sender, MouseButtonEventArgs e){
             //print(CollisionStatus);
             ///System.Windows.MessageBox.Show("Drag Satart");
-            if (e.ChangedButton == MouseButton.Right)
+            if (e.ChangedButton == MouseButton.Right && CurrentRect != null)
             {
                 CompleteRect();
             }
@@ -1157,8 +1199,78 @@ namespace WpfApp1
         }
         public void CallToYoloIT(object sender, RoutedEventArgs e)
         {
-            YoloIt.CreatePatches();
+            YoloIt.GetPatchesCount();
+            if (YoloIt.Patches > 1)
+            {
+                YoloIt.CreatePatches();
+            }
+            else
+            {
+                YoloIt.Yolo();
+            }
             
+        }
+
+        private void ImageCounter_GotFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private static bool WaitForEnter = false;
+        private void ImageCounterWait(object sender, RoutedEventArgs e)
+        {
+            WaitForEnter = true;
+        }
+        private void ImageCounterStopWaitWait(object sender, RoutedEventArgs e)
+        {
+            WaitForEnter = false;
+        }
+        private void ImageCounterJump(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && WaitForEnter)
+            {
+                if (int.TryParse(ImageCounter.Text, out int num))
+                {
+                    if(num >= 0 && num < ImageObj.Images.Count)
+                    {
+                        ImageObj.ShownInt = num + 1;
+                        NextPrev(PreviousButton, null);
+                    }
+                }
+                UpdateImageCounter();
+            }
+        }
+        public async void DeleteImage(object sender, RoutedEventArgs e)
+        {
+            if (ImageObj.Shown != null)
+            {
+                var obj = ImageObj.Shown;
+                var curpath = ImageObj.Shown.PicturePath;
+
+                var bitmapImage = Opened.Source as BitmapImage;
+                bitmapImage.StreamSource = null;
+                bitmapImage.UriSource = null;
+                Opened.Source = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                if (File.Exists(curpath))
+                {
+                    var name = System.IO.Path.GetFileNameWithoutExtension(curpath);
+                    var label = System.IO.Path.Join(labelsFolder, name) + ".txt";
+                    
+                    
+                    
+                    if (File.Exists(label))
+                    {
+                        File.Delete(label);
+                    }
+                    File.Delete(curpath);
+                    
+
+                }
+                ImageObj.Images.Remove(obj);
+                ImageObj.ShownInt++;
+                NextPrev(PreviousButton, null);
+            }
         }
     }
 }
