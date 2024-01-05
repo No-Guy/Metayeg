@@ -21,8 +21,8 @@ namespace Metayeg
 
         public static async void CreatePatches()
         {
-            GetPatchesCount();
-            MainWindow.Singleton.RunYoloButton.IsEnabled = false;
+            //GetPatchesCount();
+            //MainWindow.Singleton.RunYoloButton.IsEnabled = false;
             RectText.DestroyAll();
             var labels = System.IO.Path.Combine(MainWindow.labelsFolder, ImageObj.Shown.name + ".txt");
             if (File.Exists(labels))
@@ -57,8 +57,9 @@ namespace Metayeg
                 }
             }
 
-            YOLOpatches();
+            YOLOpatches("deprecated");
         }
+        /*
         public static void GetPatchesCount()
         {
             string val = MainWindow.Singleton.Patches_TextBox.Text;
@@ -72,31 +73,62 @@ namespace Metayeg
             }
             MainWindow.Singleton.Patches_TextBox.Text = Patches.ToString();
         }
-        public async static void Yolo()
+        */
+        public async static void Yolo(Network N)
         {
             try
             {
-                MainWindow.Singleton.RunYoloButton.IsEnabled = false;
                 var workpath = Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(ImageObj.Shown.PicturePath));
-                //MessageBox.Show(ImageObj.Shown.PicturePath + " " + Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(ImageObj.Shown.PicturePath)));
-                File.Copy(ImageObj.Shown.PicturePath, workpath);
-                YOLOpatches(false);
-                MessageBox.Show(Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
-                File.Copy(Path.ChangeExtension(workpath, ".txt"), Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
-                File.Delete(workpath);
-                await Task.Delay(10);
-                MainWindow.Singleton.TryLoad();
 
-                MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+                try
+                {
+                    //MainWindow.Singleton.RunYoloButton.IsEnabled = false;
+                    //MessageBox.Show(ImageObj.Shown.PicturePath + " " + Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(ImageObj.Shown.PicturePath)));
+                    File.Copy(ImageObj.Shown.PicturePath, workpath);
+                    YOLOpatches(N.name,false);
+                    //MessageBox.Show(Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
+                    string Label = Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt"));
+                    if (File.Exists(Label))
+                    {
+                        File.Delete(Label);
+                    }
+                    if(!File.Exists(Path.ChangeExtension(workpath, ".txt")))
+                    {
+                        MessageBox.Show("Label Not Generated");
+                    }
+                    File.Move(Path.ChangeExtension(workpath, ".txt"), Label);
+                    File.Delete(workpath);
+                    await Task.Delay(10);
+                    MainWindow.Singleton.TryLoad();
 
+                    //MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+
+                }
+                catch
+                {
+                    MessageBox.Show("fail");
+
+                }
+                /*
+                if (File.Exists(workpath))
+                {
+                    File.Delete(workpath);
+
+                }
+                */
+                if (File.Exists(Path.ChangeExtension(workpath, ".txt")))
+                {
+                    File.Delete(Path.ChangeExtension(workpath, ".txt"));
+
+                }
             }
             catch
             {
-                MessageBox.Show("fail");
+                MessageBox.Show("Path Error");
             }
 
         }
-        private static void YOLOpatches(bool rejoin = true)
+        private static void YOLOpatches(string name,bool rejoin = true)
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo
             {
@@ -115,7 +147,12 @@ namespace Metayeg
             process.Start();
 
             // Send the batch file path as a command to the command prompt
-            process.StandardInput.WriteLine("run.bat");
+            
+            if(!float.TryParse(MainWindow.Singleton.ConfBox.Text, out float conf))
+            {
+                MainWindow.Singleton.ConfBox.Text = "0.1";
+            }
+            process.StandardInput.WriteLine($"py -3 runyolo.py .\\models\\{name} {conf}");
             process.StandardInput.WriteLine("exit");
 
             // Wait for the process to complete
@@ -127,7 +164,7 @@ namespace Metayeg
             {
                 Rejoin();
             }
-            MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+            //MainWindow.Singleton.RunYoloButton.IsEnabled = true;
             
         }
         private static List<MainWindow.YOLORect> GlobalRects = new List<MainWindow.YOLORect>();
@@ -215,7 +252,7 @@ namespace Metayeg
                 catch { }
 
             }
-            MainWindow.Singleton.RunYoloButton.IsEnabled = true;
+            //MainWindow.Singleton.RunYoloButton.IsEnabled = true;
             await Task.Delay(50);
             MainWindow.Singleton.TryLoad();
         }

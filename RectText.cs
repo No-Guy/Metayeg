@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
+using WpfApp1;
 using static WpfApp1.MainWindow;
 
 namespace Metayeg
@@ -35,13 +36,17 @@ namespace Metayeg
             label.MouseLeave += OnMouseLeave;
             label.Width = Singleton.SidebarTitle.Width;
             label.Height = Singleton.SidebarTitle.Height;
-            label.Content = $"{classes[Data.c].Item1}: {round(Data.x * Singleton.Opened.Source.Width)},{round(Data.y * Singleton.Opened.Source.Height)},{round(Data.w * Singleton.Opened.Source.Width)},{round(Data.h * Singleton.Opened.Source.Height)}";
+            ChangeLabel();
             label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (Rectangles.Count + 1), Singleton.SidebarTitle.Margin.Right, 0);
             Singleton.ProjGrid.Children.Add(label);
             Rectangles.Add(this);
             image = i;
             UpdateRectTextsLocations();
             Inside(this);
+        }
+        public void ChangeLabel()
+        {
+            label.Content = $"{classes[Data.c].Item1}: {round(Data.x * Singleton.Opened.Source.Width)},{round(Data.y * Singleton.Opened.Source.Height)},{round(Data.w * Singleton.Opened.Source.Width)},{round(Data.h * Singleton.Opened.Source.Height)}";
         }
         public static void UpdateRectTextsLocations()
         {
@@ -79,6 +84,41 @@ namespace Metayeg
                     }
                 }
             
+        }
+        public static void Refresh()
+        {
+            var set = new HashSet<RectText>();
+            if (Rectangles != null)
+            {
+                foreach (var RT in Rectangles)
+                {
+                   
+                    if (Tranforms.TransformEnabled)
+                    {
+                        RT.Data.c = Tranforms.CreatedTransform[RT.Data.c];
+                    }
+                    if (RT.Data.c != -1)
+                    {
+                        setRectColor(RT.image, classes[RT.Data.c].Item2);
+                        RT.ChangeLabel();
+                    }
+                    else
+                    {
+                        set.Add(RT);
+                        Singleton.ProjGrid.Children.Remove(RT.label);
+                        Singleton.ProjGrid.Children.Remove(RT.image);
+                    }
+                    
+                }
+                foreach (var item in set)
+                {
+                    Rectangles.Remove(item);
+                }
+
+            }
+            UpdateRectTextsLocations();
+            Singleton.Export();
+            //setRectColor(System.Windows.Controls.Image i, RectColor C, int mw = -1)
         }
         public static int GetCount()
         {

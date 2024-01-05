@@ -6,13 +6,17 @@
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
         MouseUp="GenericMouseUp"
+        KeyDown="DeleteLast"
         Title="Metayeg" Height="1080" Width="1920" SizeChanged="MainWindow_SizeChanged" PreviewMouseWheel="MainWindow_PreviewMouseWheel">
-    <Grid x:Name="ProjGrid" KeyDown="DeleteLast" MouseUp="GenericMouseUp">
+    <Grid x:Name="ProjGrid" MouseUp="GenericMouseUp">
         <Menu >
-            <MenuItem Header="File" FontSize="14">
+            <MenuItem Header="File" FontSize="14" Click="AddTransform">
 
                 <MenuItem  Header="Set Path" Click="Button_Click" FontSize="12" />
+                
                 <MenuItem  Header="Save" Click="Export" FontSize="12" />
+                <MenuItem  Header="Check Consistency" Click="CheckConsistency" FontSize="12" />
+                
                 <MenuItem Header="Toggle Option">
                     <MenuItem.Template>
                         <ControlTemplate>
@@ -22,6 +26,8 @@
                 </MenuItem>
                 <MenuItem  Header="Delete" Click="DeleteImage" FontSize="12" />
 
+                <MenuItem  Header="transform" FontSize="12" Name ="TransformMenu">
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="Edit" FontSize="14">
                 <MenuItem Header="Delete All" Click="DeleteAllButtonFunction" FontSize="12"/>
@@ -34,11 +40,21 @@
                 </MenuItem>
                 <!--MenuItem Header="Zoom in" Click="OpenZoomWindow"/-->
             </MenuItem>
-
+            <MenuItem Header="Model" FontSize="14" Name="ModelsMenu">
+                <MenuItem>
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="conf: "/>
+                            <TextBox Width="100" Name="ConfBox" Text="0.1"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <Separator/>
+            </MenuItem>
         </Menu>
 
         <Label Content="Current Path: None" Name="PathLabel" VerticalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="10,0,0,13" VerticalAlignment="Bottom" Width="592" Panel.ZIndex="1" IsHitTestVisible ="False" FontSize="10"/>
-        <Image x:Name="Opened" HorizontalAlignment="Left" Height="960" Margin="20,25,0,0" VerticalAlignment="Top" Width="1680" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
+        <Image x:Name="Opened" HorizontalAlignment="Left"  Height="960" Margin="20,25,0,0" VerticalAlignment="Top" Width="1680" MouseMove="UpdateLocation" Stretch="Fill" Panel.ZIndex="0"/>
         <Label Content="Selected Location: (1000,1000)" Name="PixelLocation" HorizontalAlignment="Right" Height="29" Margin="0,0,578,12" VerticalAlignment="Bottom" Width="185" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <Label Content="Last Rectangle: None" x:Name="LastRect" HorizontalAlignment="Right" Height="31" Margin="0,0,294,10" VerticalAlignment="Bottom" Width="284" Panel.ZIndex="1" IsHitTestVisible ="False"/>
         <!--Button Content="Save" HorizontalAlignment="Right" Height="40" Margin="0,0,10,7" VerticalAlignment="Bottom" Width="189" Click="Export" Panel.ZIndex="1" FontSize="24"/-->
@@ -49,9 +65,7 @@
         <!--CheckBox Content="Load Labeling" Name="LoadLablingCB" HorizontalAlignment="Left" IsChecked="True" Margin="599,0,0,20" VerticalAlignment="Bottom" Checked="Load_Checked" Unchecked="Load_Checked"/-->
         <Image Name ="ClassColor"  HorizontalAlignment="Left" Height="20" Margin="845,0,0,17" VerticalAlignment="Bottom" Width="20" />
         <Label Name ="SidebarTitle" Content="RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" HorizontalAlignment="Right" Height="30" Margin="0,10,0,0" VerticalAlignment="Top" Width="199" Panel.ZIndex="2" HorizontalContentAlignment ="Center" FontSize="8"/>
-        <Button Content="Run Yolo" Name="RunYoloButton" HorizontalAlignment="Left" Height="29" Margin="620,0,0,11" VerticalAlignment="Bottom" Width="100" Click="CallToYoloIT" Panel.ZIndex="1" FontSize="20"/>
-        <Label Content="Patches:" x:Name="PatchesLabel" HorizontalAlignment="Left" Height="25" Margin="720,0,0,15" VerticalAlignment="Bottom" Width="54" Panel.ZIndex="1" IsHitTestVisible ="False"/>
-        <TextBox x:Name="Patches_TextBox" HorizontalAlignment="Left" Height="20" Margin="774,0,0,15" TextWrapping="Wrap" Text="1" VerticalAlignment="Bottom" Width="48" Panel.ZIndex="1"/>
+        <!--Button Content="Run Yolo" Name="RunYoloButton" HorizontalAlignment="Left" Height="29" Margin="620,0,0,11" VerticalAlignment="Bottom" Width="100" Click="CallToYoloIT" Panel.ZIndex="1" FontSize="20"/-->
         <!--Button Content="Delete All" x:Name="DeleteButton" HorizontalAlignment="Right" Height="29" Margin="0,0,583,12" VerticalAlignment="Bottom" Width="72" Click="DeleteAllButtonFunction" Panel.ZIndex="1"/-->
         <CheckBox Content="Edit Mode"  x:Name="EditMode" HorizontalAlignment="Left" IsChecked="False" Margin="1622,0,0,19" VerticalAlignment="Bottom" Checked="EnableEditMode" Unchecked="DisableEditMode"/>
         <ComboBox Name="ClassChooser"  HorizontalAlignment="Left" Height="22" Margin="940,0,0,5" VerticalAlignment="Bottom" Width="102" SelectionChanged="ChangeClassDropDown"/>

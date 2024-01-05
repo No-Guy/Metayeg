@@ -21,6 +21,7 @@ using System;
 using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.LinkLabel;
 using System.Windows.Forms.VisualStyles;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace WpfApp1
@@ -41,6 +42,7 @@ namespace WpfApp1
             //classes[0] = ("person",new RectColor(150,0,0,200));
             LoadClasses();
             NewImage();
+            Network.GenerateNetworks();
             Opened.MouseDown += Opened_MouseDown;
             Opened.MouseUp += Opened_MouseUp;
             timer = new DispatcherTimer();
@@ -54,11 +56,12 @@ namespace WpfApp1
             OriginalImageSize = new Vector(Opened.Width, Opened.Height);
             OriginalWindowSize = new Vector(Width, Height);
             //OriginalOffset2 = offset2((0, 0));
+            Tranforms.GetTransform();
 
         }
         public static Vector OriginalImageSize;
 
-        public static (double,double) OriginalOffset2;
+        public static (double, double) OriginalOffset2;
 
         public static Vector OriginalWindowSize;
         public struct YOLORect
@@ -76,8 +79,8 @@ namespace WpfApp1
                 w = w0;
                 h = h0;
                 c = c0;
-                Cor1 = (-1,-1);
-                Cor2 = (-1,-1);
+                Cor1 = (-1, -1);
+                Cor2 = (-1, -1);
             }
             public YOLORect(double x0, double y0, double w0, double h0, int c0, (double, double) S1, (double, double) S2)
             {
@@ -142,7 +145,7 @@ namespace WpfApp1
         }
         public void ChangeClass(int c)
         {
-            
+
             if (classes.ContainsKey(c))
             {
                 CurrentClass = c;
@@ -150,12 +153,12 @@ namespace WpfApp1
                 ChangeClassColor();
                 foreach (var KV in ClassesOptions)
                 {
-                    if(KV.Value == c)
+                    if (KV.Value == c)
                     {
                         ClassChooser.SelectedItem = KV.Key;
                     }
                 }
-                
+
             }
         }
         public void LoadClasses()
@@ -226,7 +229,7 @@ namespace WpfApp1
             {
                 string name = $"{KV.Value.Item1}({KV.Key})";
                 options.Add(name);
-                if(Class0 == null)
+                if (Class0 == null)
                 {
                     Class0 = name;
                     firstClass = KV.Key;
@@ -245,14 +248,15 @@ namespace WpfApp1
             // Get the selected item
             System.Windows.Controls.ComboBox comboBox = sender as System.Windows.Controls.ComboBox;
             string? selectedOption = comboBox.SelectedItem as string;
-            if(selectedOption != null)
+            if (selectedOption != null)
             {
                 CurrentClass = ClassesOptions[selectedOption];
                 Class_TextBox.Text = $"{CurrentClass}({classes[CurrentClass].Item1})";
                 ChangeClassColor();
             }
         }
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        
+            private async void Button_Click(object sender, RoutedEventArgs e)
         {
             //PathLabel.Content = "aaa";
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
@@ -287,11 +291,11 @@ namespace WpfApp1
                 {
                     SidebarTitle.FontSize = 14;
                 }
-                else if(charcount < 26)
+                else if (charcount < 26)
                 {
                     SidebarTitle.FontSize = 12;
                 }
-                else if( charcount < 31)
+                else if (charcount < 31)
                 {
                     SidebarTitle.FontSize = 10;
                 }
@@ -326,13 +330,17 @@ namespace WpfApp1
                     }
                 }
             }
+            else if (Tranforms.TransformEnabled)
+            {
+                transform = Tranforms.CreatedTransform;
+            }
             if (LoadLabel)
             {
                 var Path = System.IO.Path.Combine(labelsFolder, ImageObj.Shown.name + ".txt");
                 if (File.Exists(Path))
                 {
                     RectText.DestroyAll();
-                    
+
                     try
                     {
                         using (StreamReader reader = new StreamReader(Path))
@@ -345,7 +353,7 @@ namespace WpfApp1
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
                                     {
-                                        if(transform != null)
+                                        if (transform != null)
                                         {
                                             if (transform.ContainsKey(cls))
                                             {
@@ -367,12 +375,12 @@ namespace WpfApp1
                                         y *= Opened.Source.Height;
                                         h *= Opened.Source.Height;
 
-                                        
+
                                         var corner1 = (x + w / 2, y + h / 2);
                                         var corner2 = (x - w / 2, y - h / 2);
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
                                         BuildRectEXT(offset(inApp(corner1)), offset(inApp(corner2)), Rect);
-                                        
+
                                     }
                                 }
 
@@ -381,7 +389,7 @@ namespace WpfApp1
                     }
                     catch { }
                 }
-                
+
             }
         }
         public ((double, double), (double, double)) YoloRectToCorners(YOLORect r)
@@ -415,18 +423,32 @@ namespace WpfApp1
         }
         private void DeleteLast(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.Delete)
+            if (e.Key == Key.Escape)
             {
-                if (RectText.Rectangles.Count > 0 && CurrentID == 0)
-                {
-                    RectText.Rectangles[RectText.Rectangles.Count - 1].Destroy();
-                }
-                else if (RectText.Rectangles.Count > 0)
+                if (CurrentID > 0)
                 {
                     ResetLocations();
                     DontSaveRect();
                 }
+                else if (RectText.Rectangles.Count > 0 && CurrentID == 0)
+                {
+                    RectText.Rectangles[RectText.Rectangles.Count - 1].Destroy();
+                }
+
                 ChangeCompletedCollision(true);
+            }
+            if (e.Key == Key.Delete)
+            {
+                DeleteImage(null, null);
+            }
+
+            if (e.Key == Key.D)
+            {
+                NextPrev(NextButton, null);
+            }
+            if (e.Key == Key.A)
+            {
+                NextPrev(PreviousButton, null);
             }
             if (e.Key == Key.Return && Class_TextBox.IsFocused)
             {
@@ -449,7 +471,7 @@ namespace WpfApp1
             {
                 if (sender == NextButton)
                 {
-                    
+
                     Export();
                     ImageObj.ShownInt++;
                     if (DestroyOnNext)
@@ -459,6 +481,7 @@ namespace WpfApp1
                 }
                 else
                 {
+                    Export();
                     RectText.DestroyAll();
                     ImageObj.ShownInt--;
                 }
@@ -501,7 +524,7 @@ namespace WpfApp1
         }
         public void UpdateImageCounter()
         {
-            ImageCounter.Text = $"{ImageObj.ShownInt+1}/{ImageObj.Images.Count}";
+            ImageCounter.Text = $"{ImageObj.ShownInt + 1}/{ImageObj.Images.Count}";
         }
         public void DeleteAllButtonFunction(object sender, RoutedEventArgs e)
         {
@@ -523,7 +546,7 @@ namespace WpfApp1
                 PixelLocation.Content = $"Selected Location: {(round(inImage((mousePosition.X, mousePosition.Y)).Item1), round(inImage((mousePosition.X, mousePosition.Y)).Item2))}";
             }
         }
-        
+
 
         private void Opened_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -544,12 +567,23 @@ namespace WpfApp1
                 timer.Start();
 
             }
-            else if (e.ChangedButton == MouseButton.Right && CurrentID == 2 )
+            else if (e.ChangedButton == MouseButton.Right && CurrentID == 2)
             {
                 CompleteRect();
             }
+            Xbuttons(e);
         }
-
+        private void Xbuttons(MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.XButton1) //M4
+            {
+                NextPrev(PreviousButton, null);
+            }
+            else if (e.ChangedButton == MouseButton.XButton2) //M5
+            {
+                NextPrev(NextButton, null);
+            }
+        }
 
         private void Opened_MouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -561,12 +595,12 @@ namespace WpfApp1
                 DontSaveRect();
                 GetLocation();
             }
-            
+
             if (CurrentRect != null)
             {
                 CurrentRect.IsHitTestVisible = SelectedID == -1;
             }
-            
+
         }
         public static void print(object message)
         {
@@ -628,13 +662,13 @@ namespace WpfApp1
             }
 
         }
-        
-        private (double,double) ClampMousePosition((double, double ) mousePosition)
+
+        private (double, double) ClampMousePosition((double, double) mousePosition)
         {
             mousePosition = offset2(mousePosition);
             var baseoffset2 = offset2((0, 0));
             var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
-            return (Math.Clamp(mousePosition.Item1, baseoffset2.Item1, inapp.Item1 + baseoffset2.Item1), Math.Clamp(mousePosition.Item2, baseoffset2.Item2, inapp.Item2+ baseoffset2.Item2));
+            return (Math.Clamp(mousePosition.Item1, baseoffset2.Item1, inapp.Item1 + baseoffset2.Item1), Math.Clamp(mousePosition.Item2, baseoffset2.Item2, inapp.Item2 + baseoffset2.Item2));
         }
         private bool mousehold = true;
         public void OpenZoomWindow(object sender, RoutedEventArgs e)
@@ -666,28 +700,29 @@ namespace WpfApp1
                 SelectedID = -1;
                 UpdateLocations();
             }
-            
+
 
         }
         private void GenericMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if(e.ChangedButton == MouseButton.Left && timer.IsEnabled)
+            if (e.ChangedButton == MouseButton.Left && timer.IsEnabled)
             {
-                Opened_MouseUp(sender,e);
+                Opened_MouseUp(sender, e);
             }
         }
         private (double, double) StartingDragLocation;
-        private void DragStart(object sender, MouseButtonEventArgs e){
+        private void DragStart(object sender, MouseButtonEventArgs e)
+        {
             //print(CollisionStatus);
             ///System.Windows.MessageBox.Show("Drag Satart");
             if (e.ChangedButton == MouseButton.Right && CurrentRect != null)
             {
                 CompleteRect();
             }
-            else if(e.ChangedButton == MouseButton.Left)
+            else if (e.ChangedButton == MouseButton.Left)
             {
                 ResetLocations(false);
-                StartingDragLocation = (Mouse.GetPosition(Opened).X,Mouse.GetPosition(Opened).Y);
+                StartingDragLocation = (Mouse.GetPosition(Opened).X, Mouse.GetPosition(Opened).Y);
                 Dragtimer.Start();
                 ChangeCompletedCollision(false);
             }
@@ -736,7 +771,7 @@ namespace WpfApp1
             {
                 cid = CurrentID;
             }
-            
+
             for (global::System.Int32 j = 0; j < cid; j++)
             {
                 var i = new System.Windows.Controls.Image();
@@ -806,8 +841,8 @@ namespace WpfApp1
         {
             var inapp = inApp((Opened.Source.Width, Opened.Source.Height));
             var valoffset = offset2((0, 0));
-            SelectedLocations[0] = (Math.Clamp(SelectedLocations[0].Item1, valoffset.Item1, inapp.Item1+ valoffset.Item1), Math.Clamp(SelectedLocations[0].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
-            SelectedLocations[1] = (Math.Clamp(SelectedLocations[1].Item1, valoffset.Item1, inapp.Item1+ valoffset.Item1), Math.Clamp(SelectedLocations[1].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
+            SelectedLocations[0] = (Math.Clamp(SelectedLocations[0].Item1, valoffset.Item1, inapp.Item1 + valoffset.Item1), Math.Clamp(SelectedLocations[0].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
+            SelectedLocations[1] = (Math.Clamp(SelectedLocations[1].Item1, valoffset.Item1, inapp.Item1 + valoffset.Item1), Math.Clamp(SelectedLocations[1].Item2, valoffset.Item2, inapp.Item2 + valoffset.Item2));
         }
         public void BuildRect()
         {
@@ -845,7 +880,8 @@ namespace WpfApp1
             i.Margin = new Thickness(cor1.Item1 - i.Width * ((cor1.Item1 > cor2.Item1) ? 1 : 0), cor1.Item2 - i.Height * ((cor1.Item2 > cor2.Item2) ? 1 : 0), 0, 0);
             i.Name = $"Rect_{RectCount}";
             i.IsHitTestVisible = false;
-            i.MouseDown += DragStart;
+
+            i.MouseDown += ResetRect;
             i.MouseEnter += RectMouseEnter;
             i.MouseLeave += RectMouseLeave;
             ProjGrid.Children.Add(i);
@@ -917,11 +953,12 @@ namespace WpfApp1
         {
             setRectColor(CurrentRect, classes[CurrentClass].Item2.r, classes[CurrentClass].Item2.g, classes[CurrentClass].Item2.b, MARGINWIDTH, classes[CurrentClass].Item2.a);
             ResetLocations();
-            
+
             CurrentRect.MouseDown += ResetRect;
             CurrentRect.MouseEnter += RectMouseEnter;
             CurrentRect.MouseLeave += RectMouseLeave;
             CurrentRect.MouseDown -= DragStart;
+            ChangeCompletedCollision(true);
             var corner1 = inImage(SelectedLocations[0]);
             var corner2 = inImage(SelectedLocations[1]);
             double Width = ((double)Math.Abs(corner1.Item1 - corner2.Item1)) / Opened.Source.Width;
@@ -936,7 +973,8 @@ namespace WpfApp1
         }
         public void RectMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            if (CurrentID == 0) {
+            if (CurrentID == 0)
+            {
                 RectText.OnMouseEnter(((RectText)((System.Windows.Controls.Image)sender).Tag).label, e);
             }
         }
@@ -981,10 +1019,20 @@ namespace WpfApp1
         }
         private void ResetRect(object sender, MouseButtonEventArgs e)
         {
+            //print(e.ChangedButton);
             if (e.ChangedButton == MouseButton.Left)
             {
                 ((RectText)((System.Windows.Controls.Image)sender).Tag).EditRect();
             }
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                var master = ((RectText)((System.Windows.Controls.Image)sender).Tag);
+
+                master.Data.c = CurrentClass;
+                setRectColor(master.image, classes[CurrentClass].Item2);
+                master.ChangeLabel();
+            }
+            Xbuttons(e);
         }
         private void DisableEditMode(object sender, RoutedEventArgs e)
         {
@@ -1125,9 +1173,75 @@ namespace WpfApp1
         {
             Export();
         }
+        public static string[] ImageExtensions = new string[] { ".png", ".jpeg", ".jpg" };
+        private void CheckConsistency(object sender, RoutedEventArgs _)
+        {
+            try
+            {
+                string[] files = Directory.GetFiles(labelsFolder);
+                HashSet<string> todelete = new HashSet<string>();
+                int c = 0;
+                foreach (var f in files)
+                {
+                    string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(f);
+                    bool e = false;
+                    foreach (string ext in ImageExtensions)
+                    {
+                        if (File.Exists(System.IO.Path.Join(PATH, fileNameWithoutExtension) + ext))
+                        {
+
+                            e = true;
+                            break;
+                        }
+                    }
+                    if (!e)
+                    {
+                        File.Delete(f);
+                        c++;
+                    }
+
+                }
+                if (c == 0)
+                {
+                    print("All Labels are paired");
+                }
+                else
+                {
+                    print($"Deleted {c} unpaired Labels");
+                }
+                int first = -1;
+                c = 0;
+                for (int i = 0; i < ImageObj.Images.Count; i++)
+                {
+                    var f = ImageObj.Images[i].PicturePath;
+                    string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(f);
+                    if (!File.Exists(System.IO.Path.Join(labelsFolder, fileNameWithoutExtension) + ".txt"))
+                    {
+                        if (first == -1)
+                        {
+                            first = i;
+                        }
+                        c++;
+                    }
+                }
+                if (c > 0)
+                {
+                    print($"Missing {c} Labels, first in {first + 1}");
+                }
+                else
+                {
+                    print($"All Images are paired");
+                }
+            }
+            catch
+            {
+                print($"Path Error");
+            }
+
+        }
         public void Export()
         {
-            if (PATH != "" && RectText.Rectangles.Count > 0)
+            if (PATH != "" && ImageObj.Shown != null)
             {
                 string folderPath = labelsFolder;
 
@@ -1188,7 +1302,7 @@ namespace WpfApp1
                 }
                 //RectText.Regenerate();
             }
-           // print(OriginalImageSize + "  " + OriginalWindowSize);
+            // print(OriginalImageSize + "  " + OriginalWindowSize);
         }
         private void MainWindow_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
@@ -1199,7 +1313,12 @@ namespace WpfApp1
         }
         public void CallToYoloIT(object sender, RoutedEventArgs e)
         {
-            YoloIt.GetPatchesCount();
+            Network N = (Network)(((MenuItem)sender).Tag);
+            if (N.isYolo)
+            {
+                YoloIt.Yolo(N);
+            }
+            /*
             if (YoloIt.Patches > 1)
             {
                 YoloIt.CreatePatches();
@@ -1208,7 +1327,8 @@ namespace WpfApp1
             {
                 YoloIt.Yolo();
             }
-            
+            */
+
         }
 
         private void ImageCounter_GotFocus(object sender, RoutedEventArgs e)
@@ -1230,16 +1350,16 @@ namespace WpfApp1
             {
                 if (int.TryParse(ImageCounter.Text, out int num))
                 {
-                    if(num >= 0 && num < ImageObj.Images.Count)
+                    if (num >= 0 && num < ImageObj.Images.Count)
                     {
-                        ImageObj.ShownInt = num + 1;
+                        ImageObj.ShownInt = num;
                         NextPrev(PreviousButton, null);
                     }
                 }
                 UpdateImageCounter();
             }
         }
-        public async void DeleteImage(object sender, RoutedEventArgs e)
+        public void DeleteImage(object sender, RoutedEventArgs e)
         {
             if (ImageObj.Shown != null)
             {
@@ -1256,21 +1376,25 @@ namespace WpfApp1
                 {
                     var name = System.IO.Path.GetFileNameWithoutExtension(curpath);
                     var label = System.IO.Path.Join(labelsFolder, name) + ".txt";
-                    
-                    
-                    
+
+
+
                     if (File.Exists(label))
                     {
                         File.Delete(label);
                     }
                     File.Delete(curpath);
-                    
+
 
                 }
                 ImageObj.Images.Remove(obj);
                 ImageObj.ShownInt++;
                 NextPrev(PreviousButton, null);
             }
+        }
+        public void AddTransform(object sender, RoutedEventArgs e)
+        {
+            //Tranforms.GetTransform();
         }
     }
 }
