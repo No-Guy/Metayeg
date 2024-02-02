@@ -15,7 +15,8 @@ namespace WpfApp1
         public static List<ImageObj> Images = new List<ImageObj>();
         public static ImageObj? Shown = null;
         public static int ShownInt = 0;
-        public string PicturePath;
+        public string? PicturePath;
+        private BitmapImage? bmp;
         public string name;
 
         public int w;
@@ -27,7 +28,13 @@ namespace WpfApp1
             name = Path.GetFileNameWithoutExtension(PicturePath);
             Images.Add(this);
         }
-        
+        public ImageObj(BitmapImage b)
+        {
+            bmp = b;
+            PicturePath = null;
+            name = Images.Count.ToString();
+            Images.Add(this);
+        }
         public static void CreateImages()
         {
             Images = new List<ImageObj>();

@@ -88,6 +88,7 @@ namespace Metayeg
                     YOLOpatches(N.name,false);
                     //MessageBox.Show(Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt")));
                     string Label = Path.Combine(MainWindow.labelsFolder, Path.ChangeExtension(Path.GetFileName(ImageObj.Shown.PicturePath), ".txt"));
+
                     if (File.Exists(Label))
                     {
                         File.Delete(Label);
@@ -104,9 +105,9 @@ namespace Metayeg
                     //MainWindow.Singleton.RunYoloButton.IsEnabled = true;
 
                 }
-                catch
+                catch(Exception ex)
                 {
-                    MessageBox.Show("fail");
+                    MessageBox.Show($"{ex.Message}");
 
                 }
                 /*

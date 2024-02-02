@@ -311,6 +311,7 @@ namespace WpfApp1
         public void TryLoad()
         {
             Dictionary<int, int>? transform = null;
+            /*
             if (File.Exists(System.IO.Path.Combine(PATH, "_transform.txt")))
             {
                 using (StreamReader reader = new StreamReader(System.IO.Path.Combine(PATH, "_transform.txt")))
@@ -330,7 +331,8 @@ namespace WpfApp1
                     }
                 }
             }
-            else if (Tranforms.TransformEnabled)
+            */
+            if (Tranforms.TransformEnabled)
             {
                 transform = Tranforms.CreatedTransform;
             }
@@ -524,7 +526,14 @@ namespace WpfApp1
         }
         public void UpdateImageCounter()
         {
-            ImageCounter.Text = $"{ImageObj.ShownInt + 1}/{ImageObj.Images.Count}";
+            if (ImageObj.Shown != null)
+            {
+                ImageCounter.Text = $"{ImageObj.ShownInt + 1}/{ImageObj.Images.Count}";
+            }
+            else
+            {
+                ImageCounter.Text = "";
+            }
         }
         public void DeleteAllButtonFunction(object sender, RoutedEventArgs e)
         {
@@ -1168,6 +1177,10 @@ namespace WpfApp1
         {
             System.Windows.Controls.TextBox textBox = (System.Windows.Controls.TextBox)sender;
             textBox.Text = "";
+        }
+        public void SetVideo(object sender, RoutedEventArgs e)
+        {
+            Videos.GetVideoPath();
         }
         public void Export(object sender, RoutedEventArgs e)
         {

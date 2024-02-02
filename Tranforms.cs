@@ -48,9 +48,12 @@ namespace Metayeg
             // Set the Grid as the MenuItem's header
             menuItem0.Header = grid0;
             MainWindow.Singleton.TransformMenu.Items.Add(menuItem0);
+            MainWindow.Singleton.TransformMenu.Items.Add(new Separator());
 
 
-            
+            var title = new MenuItem();
+            title.Header = " From                              To";
+            MainWindow.Singleton.TransformMenu.Items.Add(title);
 
 
 
