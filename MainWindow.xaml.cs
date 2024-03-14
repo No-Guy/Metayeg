@@ -255,7 +255,12 @@ namespace WpfApp1
                 ChangeClassColor();
             }
         }
-        
+        public static VideoWindow? vw;
+        private void OpenVideoWindow(object sender, RoutedEventArgs e)
+        {
+            vw = new VideoWindow();
+            vw.Show();
+        }
             private async void Button_Click(object sender, RoutedEventArgs e)
         {
             //PathLabel.Content = "aaa";
@@ -342,15 +347,16 @@ namespace WpfApp1
                 if (File.Exists(Path))
                 {
                     RectText.DestroyAll();
-
                     try
                     {
                         using (StreamReader reader = new StreamReader(Path))
                         {
                             string line;
+                            
                             while ((line = reader.ReadLine()) != null)
                             {
                                 var parts = line.Split(" ");
+                                
                                 if (parts.Length == 5)
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
@@ -389,7 +395,9 @@ namespace WpfApp1
                             }
                         }
                     }
-                    catch { }
+                    catch(Exception ex){
+                        print(ex);
+                    }
                 }
 
             }

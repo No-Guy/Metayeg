@@ -51,6 +51,9 @@
                 </MenuItem>
                 <Separator/>
             </MenuItem>
+            <MenuItem Header="Video" FontSize="14" Name="VideoMenu">
+                <MenuItem Header="Video Tester" Click="OpenVideoWindow" FontSize="12"/>
+            </MenuItem>
         </Menu>
 
         <Label Content="Current Path: None" Name="PathLabel" VerticalContentAlignment ="Center" HorizontalAlignment="Left" Height="31" Margin="10,0,0,13" VerticalAlignment="Bottom" Width="592" Panel.ZIndex="1" IsHitTestVisible ="False" FontSize="10"/>
