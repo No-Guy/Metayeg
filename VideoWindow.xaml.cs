@@ -22,6 +22,8 @@ using System.Text.RegularExpressions;
 using System.Windows.Threading;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Windows.Ink;
+using static WpfApp1.MainWindow;
+using System.Runtime.ExceptionServices;
 
 
 namespace Metayeg
@@ -44,7 +46,14 @@ namespace Metayeg
             playtimer.Tick += PlayTick;
             PlayPauseButton.Content = "Play";
             HasVideo = false;
+            Singleton = this;
+            RectTextBaseLabelRight.Content = "";
+            RectTextBaseLabelLeft.Content = "";
+            JumpInputBox.Text = "";
+            Network.GenerateNetworks(RectText.Window.VideoWindowLeft);
+            Labels = new Dictionary<int, List<YOLORect>>();
         }
+        public static VideoWindow Singleton;
         private static DispatcherTimer timer;
         private static DispatcherTimer playtimer;
         public static int CurrentFrame;
@@ -54,8 +63,6 @@ namespace Metayeg
         public static readonly int BufferSize = 100;
         public static string PATH;
         public static object lockObject = new object();
-        //public static Thread fillThread;
-        //public static Thread emptierThread;
         public static bool kill = false;
         public static double FPS;
         public static int numWorkers = 5;
@@ -107,12 +114,90 @@ namespace Metayeg
                 Seek(0);
                 //Thread fillThread = new Thread(new ThreadStart(FillerThread));
                 Thread emptierThread = new Thread(new ThreadStart(EmptierThread));
-                
+                JumpInputBox.Text = 0.ToString();
                 // Start the thread
-                
+
                 emptierThread.Start();
                 timer.Start();
+                //RenderRectangle(new YOLORect(0.5, 0.5, 1, 1, 0));
+            }
+        }
+        public static bool Waiting4Network = false;
+        public void CallToTLBL(object sender, RoutedEventArgs e)
+        {
+            Network N = (Network)(((MenuItem)sender).Tag);
+            if (N.isYolo)
+            {
+                string filePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "Models", N.name);
+                Thread T = new Thread(() => YoloVideoThread(filePath));
+                T.Start();
+            }
+        }
+        private static bool Reload = false;
+
+        private static Dictionary<int, List<YOLORect>> Labels;
+        public void YoloVideoThread(string yolopath, double conf = 0.1)
+        {
+            Labels = new Dictionary<int, List<YOLORect>>();
+            Waiting4Network = true;
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = "python";
+            startInfo.Arguments = $"{System.IO.Path.Combine(Directory.GetCurrentDirectory(), "src", "tlbl_yolo.py")} \"{yolopath}\" \"{PATH}\" {conf}";
+            startInfo.UseShellExecute = false;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.CreateNoWindow = false;
+            
+            Process process = new Process();
+            process.StartInfo = startInfo;
+            /*
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    CompletedPercent = int.Parse(e.Data);
+                }
+            };
+           
+            */
+            int frame_idx = 0;
+            Labels[0] = new List<YOLORect>();
+            process.Start();
+            while (!process.StandardOutput.EndOfStream)
+            {
+                string? line = process.StandardOutput.ReadLine();
                 
+                if (line != null)
+                {
+                    string[] parts = line.Split();
+                    if (line == "--")
+                    {
+                        frame_idx++;
+                        Labels[frame_idx] = new List<YOLORect>();
+                    }
+                    else if (parts.Length == 5) { 
+
+                        Labels[frame_idx].Add(new YOLORect(float.Parse(parts[1]), float.Parse(parts[2]), float.Parse(parts[3]), float.Parse(parts[4]), int.Parse(parts[0])));
+                    }
+                }
+            }
+            process.WaitForExit();
+            Waiting4Network = false;
+            Reload = true;
+            Dispatcher.Invoke(() =>
+            {
+                RenderLabels();
+            });
+        }
+        private void RenderLabels()
+        {
+            RectText.DestroyAll();
+            if (Labels.ContainsKey(CurrentFrame))
+            {
+                foreach (var rect in Labels[CurrentFrame])
+                {
+                    RenderRectangle(rect);
+                }
             }
         }
         private void OneFrameForward(object sender, RoutedEventArgs e)
@@ -120,6 +205,7 @@ namespace Metayeg
             if (HasVideo)
             {
                 Forward(1);
+                
             }
         }
         public static bool PlayPauseState = false;
@@ -156,6 +242,10 @@ namespace Metayeg
                 {
                     Frame.Source = ConvertBitmapToBitmapImage(frame);
                     ImageBuffer[CurrentFrame] = frame;
+                    if (Labels.ContainsKey(CurrentFrame))
+                    {
+                        RenderLabels();
+                    }
                 }
             }
             
@@ -197,6 +287,10 @@ namespace Metayeg
             Latency = ActualFPSSW.Elapsed.TotalMilliseconds;
             playtimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1,1/FPS * 1000 - Latency));
             ActualFPSSW.Reset();
+            if (Labels.ContainsKey(CurrentFrame))
+            {
+                RenderLabels();
+            }
         }
         public void Seek(int framenum)
         {
@@ -267,6 +361,14 @@ namespace Metayeg
         public void updateData(object sender, EventArgs e)
         {
             BufferData.Content = $"Frame {CurrentFrame}/{FrameCount}, Buffer: {ImageBuffer.Keys.Count}/{BufferSize}, Latency: {(int)Latency} ms";
+            if (Waiting4Network)
+            {
+                Pythonpercent.Content = $"Processing Video...";
+            }
+            else
+            {
+                Pythonpercent.Content = "";
+            }
         }
         private void EmptierThread()
         {
@@ -388,6 +490,26 @@ namespace Metayeg
                 }
                 JumpInputBox.Text = $"{Destination}";
             }
+        }
+        public void RenderRectangle(YOLORect r)
+        {
+            var cor1 = ((r.x - r.w/2)*Frame.Width,(r.y - r.h/2) * Frame.Height);
+            var cor2 = ((r.x + r.w / 2) * Frame.Width, (r.y + r.h / 2) * Frame.Height);
+            int c = r.c;
+            var i = new System.Windows.Controls.Image();
+            i.Width = Math.Abs(cor1.Item1 - cor2.Item1);// (cor1.Item1 - cor2.Item1);
+            i.Height = Math.Abs(cor1.Item2 - cor2.Item2);
+            //i.Height = Math.Abs(cor1.Item2 - cor2.Item2);
+            i.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+            i.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+            i.Margin = new Thickness(cor1.Item1 + Frame.Margin.Left, cor1.Item2+ Frame.Margin.Top, 0, 0);
+            i.Name = $"Rect_{RectText.Rectangles.Count}";
+            i.IsHitTestVisible = false;
+            Grid.Children.Add(i);
+            System.Windows.Controls.Panel.SetZIndex(i, 3);
+            setRectColor(i, classes[c].Item2);
+            new RectText(r, i, RectText.Window.VideoWindowLeft);
+
         }
     }
     

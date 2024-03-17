@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Formats.Asn1;
 using System.Linq;
 using System.Security.Cryptography;
@@ -19,34 +20,75 @@ namespace Metayeg
         public YOLORect Data;
         public System.Windows.Controls.Label label;
         public System.Windows.Controls.Image image;
+        public Window origin;
+        public enum Window
+        {
+            MainWindow =0, VideoWindowLeft = 1, VideoWindowRight = 2
+        }
 
         public static int location = 0;
 
         public static List<RectText> Rectangles = new List<RectText>();
-        public RectText(YOLORect d, System.Windows.Controls.Image i)
+        public RectText(YOLORect d, System.Windows.Controls.Image i, Window o = Window.MainWindow)
         {
+            origin = o;
             label = new System.Windows.Controls.Label();
             Data = d;
             label.Tag = this;
             i.Tag = this;
+
             label.VerticalAlignment = System.Windows.VerticalAlignment.Top;
             label.HorizontalAlignment = System.Windows.HorizontalAlignment.Right;
-            label.MouseEnter += OnMouseEnter;
-            label.MouseDown += OnMouseDown;
-            label.MouseLeave += OnMouseLeave;
-            label.Width = Singleton.SidebarTitle.Width;
-            label.Height = Singleton.SidebarTitle.Height;
+            if (origin == Window.MainWindow)
+            {
+                label.MouseEnter += OnMouseEnter;
+                label.MouseDown += OnMouseDown;
+                label.MouseLeave += OnMouseLeave;
+                label.Width = Singleton.SidebarTitle.Width;
+                label.Height = Singleton.SidebarTitle.Height;
+                label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (Rectangles.Count + 1), Singleton.SidebarTitle.Margin.Right, 0);
+                Singleton.ProjGrid.Children.Add(label);
+            }
+            else if (origin == Window.VideoWindowLeft || origin == Window.VideoWindowRight)
+            {
+                VideoWindow.Singleton.Grid.Children.Add(label);
+                label.Width = VideoWindow.Singleton.RectTextBaseLabelLeft.Width;
+                label.Height = VideoWindow.Singleton.RectTextBaseLabelLeft.Height;
+                if (origin == Window.VideoWindowLeft)
+                {
+                    label.Margin = new System.Windows.Thickness(0, 0, 0, 0);
+                    //label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Top, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Right, 0);
+                }
+                else
+                {
+                    label.Margin = new System.Windows.Thickness(0, 0, 0, 0);
+                    //label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Top, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Right, 0);
+                }
+                //print($"{label.Margin} | {VideoWindow.Singleton.RectTextBaseLabelLeft.Margin}");
+                
+            }
             ChangeLabel();
-            label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (Rectangles.Count + 1), Singleton.SidebarTitle.Margin.Right, 0);
-            Singleton.ProjGrid.Children.Add(label);
             Rectangles.Add(this);
             image = i;
             UpdateRectTextsLocations();
             Inside(this);
+            
         }
         public void ChangeLabel()
         {
-            label.Content = $"{classes[Data.c].Item1}: {round(Data.x * Singleton.Opened.Source.Width)},{round(Data.y * Singleton.Opened.Source.Height)},{round(Data.w * Singleton.Opened.Source.Width)},{round(Data.h * Singleton.Opened.Source.Height)}";
+            if (origin == Window.MainWindow)
+            {
+                label.Content = $"{classes[Data.c].Item1}: {round(Data.x * Singleton.Opened.Source.Width)},{round(Data.y * Singleton.Opened.Source.Height)},{round(Data.w * Singleton.Opened.Source.Width)},{round(Data.h * Singleton.Opened.Source.Height)}";
+            }
+            else if(origin == Window.VideoWindowRight || origin == Window.VideoWindowLeft)
+            {
+                label.Content = $"{classes[Data.c].Item1} ";
+            }
+        }
+        private static string RoundTo1(double d)
+        {
+
+            return ((double)((int)(d * 10)) / 10).ToString();
         }
         public static void UpdateRectTextsLocations()
         {
@@ -56,7 +98,18 @@ namespace Metayeg
             {
                 if (i >= location && i < GetCount() + location)
                 {
-                    rect.label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (i - location + 1), Singleton.SidebarTitle.Margin.Right, 0);
+                    if (rect.origin == Window.MainWindow)
+                    {
+                        rect.label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (i - location + 1), Singleton.SidebarTitle.Margin.Right, 0);
+                    }
+                    else if (rect.origin == Window.VideoWindowLeft)
+                    {
+                        rect.label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Top + 25 * (i - location + 1), VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Right, 0);
+                    }
+                    else if (rect.origin == Window.VideoWindowLeft)
+                    {
+                        rect.label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Top + 25 * (i - location + 1), VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Right, 0);
+                    }
                     rect.label.IsEnabled = true;
                     rect.label.Visibility = System.Windows.Visibility.Visible;
                 }
@@ -70,19 +123,21 @@ namespace Metayeg
         }
         public static void Inside(RectText Rect1)
         {
-            
+            if (Window.MainWindow == Rect1.origin)
+            {
                 foreach (var Rect2 in Rectangles)
                 {
-                    if(Rect1 != Rect2)
+                    if (Rect1 != Rect2)
                     {
-                        if (Rect1.Data.x + Rect1.Data.w/2 >= Rect2.Data.x + Rect2.Data.w / 2 && Rect1.Data.x - Rect1.Data.w / 2 <= Rect2.Data.x - Rect2.Data.w / 2 && 
-                            Rect1.Data.y + Rect1.Data.h/2 > Rect2.Data.y + Rect2.Data.h / 2 && Rect1.Data.y - Rect1.Data.h / 2 <= Rect2.Data.y - Rect2.Data.h / 2)  //Rect2 is inside Rect1
+                        if (Rect1.Data.x + Rect1.Data.w / 2 >= Rect2.Data.x + Rect2.Data.w / 2 && Rect1.Data.x - Rect1.Data.w / 2 <= Rect2.Data.x - Rect2.Data.w / 2 &&
+                            Rect1.Data.y + Rect1.Data.h / 2 > Rect2.Data.y + Rect2.Data.h / 2 && Rect1.Data.y - Rect1.Data.h / 2 <= Rect2.Data.y - Rect2.Data.h / 2)  //Rect2 is inside Rect1
                         {
-                        Singleton.ProjGrid.Children.Remove(Rect2.image);
-                        Singleton.ProjGrid.Children.Add(Rect2.image);
+                            Singleton.ProjGrid.Children.Remove(Rect2.image);
+                            Singleton.ProjGrid.Children.Add(Rect2.image);
                         }
                     }
                 }
+            }
             
         }
         public static void Refresh()
@@ -122,15 +177,30 @@ namespace Metayeg
         }
         public static int GetCount()
         {
-            
-            return (int)((System.Windows.Application.Current.MainWindow.Height - 65) / 30);
+            if (Rectangles[0].origin == Window.MainWindow)
+            {
+                return (int)((System.Windows.Application.Current.MainWindow.Height - 65) / 30);
+            }
+            else if(Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
+            {
+                return (int)((System.Windows.Application.Current.MainWindow.Height - 80) / 30);
+            }
+            return 100;
         }
         public static void DestroyAll()
         {
             foreach (var item in Rectangles)
             {
-                Singleton.ProjGrid.Children.Remove(item.label);
-                Singleton.ProjGrid.Children.Remove(item.image);
+                if (item.origin == Window.MainWindow)
+                {
+                    Singleton.ProjGrid.Children.Remove(item.label);
+                    Singleton.ProjGrid.Children.Remove(item.image);
+                }
+                else if(Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
+                {
+                    VideoWindow.Singleton.Grid.Children.Remove(item.label);
+                    VideoWindow.Singleton.Grid.Children.Remove(item.image);
+                }
             }
             Rectangles = new List<RectText>();
         }
@@ -154,8 +224,16 @@ namespace Metayeg
         }
         public void Destroy()
         {
-            Singleton.ProjGrid.Children.Remove(label);
-            Singleton.ProjGrid.Children.Remove(image);
+            if (origin == Window.MainWindow)
+            {
+                Singleton.ProjGrid.Children.Remove(label);
+                Singleton.ProjGrid.Children.Remove(image);
+            }
+            else if (Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
+            {
+                VideoWindow.Singleton.Grid.Children.Remove(label);
+                VideoWindow.Singleton.Grid.Children.Remove(image);
+            }
             Rectangles.Remove(this);
             UpdateRectTextsLocations();
         }

@@ -21,7 +21,11 @@ namespace WpfApp1
 
         public int w;
         public int h;
-
+        public static void DestroyAll()
+        {
+            Shown = null;
+            Images = new List<ImageObj>();
+        }
         public ImageObj(string p)
         {
             PicturePath = p;

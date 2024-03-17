@@ -259,6 +259,10 @@ namespace WpfApp1
         private void OpenVideoWindow(object sender, RoutedEventArgs e)
         {
             vw = new VideoWindow();
+            Opened.Source = null;
+            NewImage();
+            RectText.DestroyAll();
+            PATH = null;
             vw.Show();
         }
             private async void Button_Click(object sender, RoutedEventArgs e)
@@ -1416,6 +1420,13 @@ namespace WpfApp1
         public void AddTransform(object sender, RoutedEventArgs e)
         {
             //Tranforms.GetTransform();
+        }
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Perform any cleanup operations here if needed
+
+            // Shutdown the application
+            System.Windows.Application.Current.Shutdown();
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Metayeg
         public string name;
 
         public bool isYolo;
-        public static void GenerateNetworks()
+        public static void GenerateNetworks(RectText.Window w = RectText.Window.MainWindow)
         {
             networks = new List<Network>();
             var NetworksFolder = Path.Combine(Directory.GetCurrentDirectory(), "Models");
@@ -45,10 +45,17 @@ namespace Metayeg
                         }
                         newItem.FontSize = 12;
                         newItem.Tag = n;
-                        newItem.Click += MainWindow.Singleton.CallToYoloIT;
 
-                        // Add the new MenuItem to the existing Menu control
-                        MainWindow.Singleton.ModelsMenu.Items.Add(newItem);
+                        if (w == RectText.Window.MainWindow)
+                        {
+                            newItem.Click += MainWindow.Singleton.CallToYoloIT;
+                            MainWindow.Singleton.ModelsMenu.Items.Add(newItem);
+                        }
+                        else if (w == RectText.Window.VideoWindowLeft)
+                        {
+                            VideoWindow.Singleton.ModelsMenu.Items.Add(newItem);
+                            newItem.Click += VideoWindow.Singleton.CallToTLBL;
+                        }
                     }
                 }
             }
