@@ -8,13 +8,25 @@
         Title="VideoWindow" Height="1080" Width="1920">
     <Grid Name ="Grid">
         <Image x:Name="Frame" HorizontalAlignment="Left"  Height="894" VerticalAlignment="Top" Width="1680" Stretch="Fill" Panel.ZIndex="1" Margin="0,75,0,0"/>
-        <Label Name="RectTextBaseLabelRight" Content="0.1,0.3,2,0.1" HorizontalAlignment="Right" Height="33" Margin="0,38,10,0" VerticalAlignment="Top" Width="104"  Panel.ZIndex="2"/>
-        <Label Name="RectTextBaseLabelLeft" Content="shark, 0.1,0.3,2,0.1" HorizontalAlignment="Right" Height="33" Margin="0,38,119,0" VerticalAlignment="Top" Width="104"  Panel.ZIndex="2"/>
+        <Label Name="RectTextBaseLabelRight" Content="0.1,0.3,2,0.1" HorizontalAlignment="Right" Height="34" Margin="0,52,10,0" VerticalAlignment="Top" Width="104"  Panel.ZIndex="2"/>
+        <Label Name="RectTextBaseLabelLeft" Content="shark, 0.1,0.3,2,0.1" HorizontalAlignment="Right" Height="34" Margin="0,52,119,0" VerticalAlignment="Top" Width="104"  Panel.ZIndex="2"/>
         <Menu HorizontalAlignment="Center" Width="1900" VerticalAlignment="Top" >
             <MenuItem Header="File" FontSize="14" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <MenuItem Header="Select Video" Click="SelectVideo" FontSize="12"/>
             </MenuItem>
             <MenuItem Header="Model" FontSize="14" VerticalAlignment="Top" HorizontalAlignment="Left" Name ="ModelsMenu">
+                <MenuItem Header="Save PLBL" VerticalAlignment="Top" HorizontalAlignment="Left" Click="SavePLBL" Name="SavePLBLButton" IsEnabled="True"/>
+                <MenuItem Header="Load PLBL" VerticalAlignment="Top" HorizontalAlignment="Left" Click="LoadPLBL"/>
+                <Separator VerticalAlignment="Stretch" Margin="5,0,5,0"/>
+            </MenuItem>
+            <MenuItem Header="QLBL" FontSize="14" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <MenuItem Header="QLBL Class" FontSize="12" Name="QLBL_Classes">
+
+                </MenuItem>
+                <MenuItem Header="Reset" FontSize="12" Name="QLBLMenu_ResetButton"/>
+                <MenuItem Header="Load" FontSize="12" Name="QLBLMenu_LoadButton"/>
+                <MenuItem Header="Save" FontSize="12" Name="QLBLMenu_SaveButton"/>
+                <MenuItem Header="Scan" FontSize="12" Name="QLBLMenu_ScanButton"/>
             </MenuItem>
         </Menu>
         <Label Name="BufferData" Content="" HorizontalAlignment="Left" Height="33" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="445"  Panel.ZIndex="2"/>
@@ -24,5 +36,6 @@
         <Button Name ="PlayPauseButton" Content="Play/Pause" HorizontalAlignment="Left" Height="40" Margin="836,0,0,10" VerticalAlignment="Bottom" Width="96" Click="PlayPause" FontSize="16"/>
         <TextBox HorizontalAlignment="Left" Name="JumpInputBox" Height="20" Margin="548,0,0,20" TextWrapping="Wrap" Text="129390" VerticalAlignment="Bottom" Width="112" PreviewKeyDown="Jump"/>
         <Label x:Name="Pythonpercent" Content="" HorizontalAlignment="Left" Height="33" Margin="1123,0,0,13" VerticalAlignment="Bottom" Width="175"  Panel.ZIndex="2"/>
+        <Label x:Name="ScoreBox" Content="" HorizontalAlignment="Right" Height="34" Margin="0,21,119,0" VerticalAlignment="Top" Width="104"  Panel.ZIndex="2"/>
     </Grid>
 </Window>

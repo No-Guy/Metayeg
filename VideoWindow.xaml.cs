@@ -24,6 +24,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Windows.Ink;
 using static WpfApp1.MainWindow;
 using System.Runtime.ExceptionServices;
+using System.Drawing;
+using System.Windows.Markup;
 
 
 namespace Metayeg
@@ -52,6 +54,13 @@ namespace Metayeg
             JumpInputBox.Text = "";
             Network.GenerateNetworks(RectText.Window.VideoWindowLeft);
             Labels = new Dictionary<int, List<YOLORect>>();
+            Frame.MouseDown += QLBL.AddQLBL;
+            QLBL.setclasses();
+            SavePLBLButton.IsEnabled = false;
+            QLBLMenu_ResetButton.Click += QLBL.Reset;
+            QLBLMenu_SaveButton.Click += QLBL.SaveQLBL;
+            QLBLMenu_LoadButton.Click += QLBL.LoadQLBL;
+            QLBLMenu_ScanButton.Click += QLBL.Scan;
         }
         public static VideoWindow Singleton;
         private static DispatcherTimer timer;
@@ -135,7 +144,7 @@ namespace Metayeg
         }
         private static bool Reload = false;
 
-        private static Dictionary<int, List<YOLORect>> Labels;
+        public static Dictionary<int, List<YOLORect>> Labels;
         public void YoloVideoThread(string yolopath, double conf = 0.1)
         {
             Labels = new Dictionary<int, List<YOLORect>>();
@@ -187,7 +196,9 @@ namespace Metayeg
             Dispatcher.Invoke(() =>
             {
                 RenderLabels();
+                SavePLBLButton.IsEnabled = true;
             });
+            
         }
         private void RenderLabels()
         {
@@ -199,6 +210,7 @@ namespace Metayeg
                     RenderRectangle(rect);
                 }
             }
+            RectTextBaseLabelLeft.Content = "Predicted Label";
         }
         private void OneFrameForward(object sender, RoutedEventArgs e)
         {
@@ -246,6 +258,7 @@ namespace Metayeg
                     {
                         RenderLabels();
                     }
+                    QLBL.Refresh();
                 }
             }
             
@@ -291,6 +304,7 @@ namespace Metayeg
             {
                 RenderLabels();
             }
+            QLBL.Refresh();
         }
         public void Seek(int framenum)
         {
@@ -314,6 +328,7 @@ namespace Metayeg
             {
                 Frame.Source = ConvertBitmapToBitmapImage(frame);
             }
+            QLBL.Refresh();
         }
         
         public static void FillerThread(int i)
@@ -476,6 +491,46 @@ namespace Metayeg
             }
             return bitmapImage;
         }
+        public static BitmapImage ConvertBitmapToBitmapImageRGBA(Bitmap bitmap)
+        {
+            BitmapImage bitmapImage = new BitmapImage();
+            using (MemoryStream memory = new MemoryStream())
+            {
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png); // Use PNG format
+                memory.Position = 0;
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = memory;
+                bitmapImage.EndInit();
+            }
+            return bitmapImage;
+        }
+        public static Bitmap ConvertBitmapImageToBitmapRGBA(BitmapImage bitmapImage)
+        {
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                PngBitmapEncoder enc = new PngBitmapEncoder(); // Use PNG encoder
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
+        }
+        public static Bitmap ConvertBitmapImageToBitmap(BitmapImage bitmapImage)
+        {
+            // BitmapImage bitmapImage = new BitmapImage(new Uri("../Images/test.png", UriKind.Relative));
+
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
+        }
         private void Jump(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -511,6 +566,77 @@ namespace Metayeg
             new RectText(r, i, RectText.Window.VideoWindowLeft);
 
         }
+        //models menu save load plbl
+        private void SavePLBL(object sender, RoutedEventArgs e)
+        {
+            //PathLabel.Content = "aaa";
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            folderBrowserDialog.Description = "Select output folder";
+            DialogResult result = folderBrowserDialog.ShowDialog();
+            string selectedFilePath = System.IO.Path.Combine(folderBrowserDialog.SelectedPath, $"{System.IO.Path.GetFileNameWithoutExtension(VideoWindow.PATH)}.plbl");
+            using (StreamWriter writer = new StreamWriter(selectedFilePath))
+            {
+                foreach (var framenum in Labels.Keys)
+                {
+                    writer.WriteLine(framenum);
+                    foreach (var rect in Labels[framenum])
+                    {
+                        writer.WriteLine(rect);
+                    }
+                }
+
+            }
+        }
+        private void LoadPLBL(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Select Predicted Label File",
+                Filter = "PLBL files (*.plbl)|*.plbl|All files (*.*)|*.*"
+            };
+            
+         
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                int frame = 0;
+                Labels = new Dictionary<int, List<YOLORect>>();
+                var filepath = openFileDialog.FileName;
+                using (StreamReader sr = new StreamReader(filepath))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        var parts = line.Split(' ');
+                        if(parts.Length == 1)
+                        {
+                            if(int.TryParse(parts[0], out int tmp))
+                            {
+                                frame = tmp;
+                                Labels[frame] = new List<YOLORect>();
+                            }
+                        }
+                        else if(parts.Length == 5)
+                        {
+                            if (int.TryParse(parts[0], out int c) && float.TryParse(parts[1], out float x) && float.TryParse(parts[2], out float y) && float.TryParse(parts[3], out float w) && float.TryParse(parts[4], out float h))
+                            {
+                                Labels[frame].Add(new YOLORect(x,y,w,h,c));
+                            }
+                        }
+                        else
+                        {
+                            print($"{line} is invalid");
+                            break;
+                        }
+                    }
+                }
+                RenderLabels();
+                SavePLBLButton.IsEnabled = true;
+            }
+        }
     }
+
+
+
     
+
 }

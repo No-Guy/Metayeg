@@ -110,6 +110,12 @@ namespace WpfApp1
                 g = g0; b = b0;
                 a = a0;
             }
+            public RectColor(byte r0, byte g0, byte b0)
+            {
+                r = r0;
+                g = g0; b = b0;
+                a = 255;
+            }
             public override string ToString()
             {
                 return $"r: {r}, g: {g}, b: {b}, a: {a}";
