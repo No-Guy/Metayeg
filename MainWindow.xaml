@@ -16,7 +16,6 @@
             <MenuItem Header="File" FontSize="14" Click="AddTransform">
 
                 <MenuItem  Header="Set Path" Click="Button_Click" FontSize="12" />
-                <MenuItem  Header="Load Video" Click="SetVideo" FontSize="12" />
                 <MenuItem  Header="Save" Click="Export" FontSize="12" />
                 <MenuItem  Header="Check Consistency" Click="CheckConsistency" FontSize="12" />
 
@@ -53,9 +52,6 @@
                     </MenuItem.Header>
                 </MenuItem>
                 <Separator/>
-            </MenuItem>
-            <MenuItem Header="Video" FontSize="14" Name="VideoMenu">
-                <MenuItem Header="Video Tester" Click="OpenVideoWindow" FontSize="12"/>
             </MenuItem>
         </Menu>
 

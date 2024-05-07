@@ -51,11 +51,6 @@ namespace Metayeg
                             newItem.Click += MainWindow.Singleton.CallToYoloIT;
                             MainWindow.Singleton.ModelsMenu.Items.Add(newItem);
                         }
-                        else if (w == RectText.Window.VideoWindowLeft)
-                        {
-                            VideoWindow.Singleton.ModelsMenu.Items.Add(newItem);
-                            newItem.Click += VideoWindow.Singleton.CallToTLBL;
-                        }
                     }
                 }
             }

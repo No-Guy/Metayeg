@@ -260,16 +260,7 @@ namespace WpfApp1
                 ChangeClassColor();
             }
         }
-        public static VideoWindow? vw;
-        private void OpenVideoWindow(object sender, RoutedEventArgs e)
-        {
-            vw = new VideoWindow();
-            Opened.Source = null;
-            NewImage();
-            RectText.DestroyAll();
-            PATH = null;
-            vw.Show();
-        }
+        
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
             //PathLabel.Content = "aaa";
@@ -1215,10 +1206,6 @@ namespace WpfApp1
         {
             System.Windows.Controls.TextBox textBox = (System.Windows.Controls.TextBox)sender;
             textBox.Text = "";
-        }
-        public void SetVideo(object sender, RoutedEventArgs e)
-        {
-            Videos.GetVideoPath();
         }
         public void Export(object sender, RoutedEventArgs e)
         {

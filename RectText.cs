@@ -49,24 +49,6 @@ namespace Metayeg
                 label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (Rectangles.Count + 1), Singleton.SidebarTitle.Margin.Right, 0);
                 Singleton.ProjGrid.Children.Add(label);
             }
-            else if (origin == Window.VideoWindowLeft || origin == Window.VideoWindowRight)
-            {
-                VideoWindow.Singleton.Grid.Children.Add(label);
-                label.Width = VideoWindow.Singleton.RectTextBaseLabelLeft.Width;
-                label.Height = VideoWindow.Singleton.RectTextBaseLabelLeft.Height;
-                if (origin == Window.VideoWindowLeft)
-                {
-                    label.Margin = new System.Windows.Thickness(0, 0, 0, 0);
-                    //label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Top, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Right, 0);
-                }
-                else
-                {
-                    label.Margin = new System.Windows.Thickness(0, 0, 0, 0);
-                    //label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Top, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Right, 0);
-                }
-                //print($"{label.Margin} | {VideoWindow.Singleton.RectTextBaseLabelLeft.Margin}");
-                
-            }
             ChangeLabel();
             Rectangles.Add(this);
             image = i;
@@ -101,14 +83,6 @@ namespace Metayeg
                     if (rect.origin == Window.MainWindow)
                     {
                         rect.label.Margin = new System.Windows.Thickness(0, Singleton.SidebarTitle.Margin.Top + 30 * (i - location + 1), Singleton.SidebarTitle.Margin.Right, 0);
-                    }
-                    else if (rect.origin == Window.VideoWindowLeft)
-                    {
-                        rect.label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Top + 25 * (i - location + 1), VideoWindow.Singleton.RectTextBaseLabelLeft.Margin.Right, 0);
-                    }
-                    else if (rect.origin == Window.VideoWindowLeft)
-                    {
-                        rect.label.Margin = new System.Windows.Thickness(0, VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Top + 25 * (i - location + 1), VideoWindow.Singleton.RectTextBaseLabelRight.Margin.Right, 0);
                     }
                     rect.label.IsEnabled = true;
                     rect.label.Visibility = System.Windows.Visibility.Visible;
@@ -196,11 +170,6 @@ namespace Metayeg
                     Singleton.ProjGrid.Children.Remove(item.label);
                     Singleton.ProjGrid.Children.Remove(item.image);
                 }
-                else if(Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
-                {
-                    VideoWindow.Singleton.Grid.Children.Remove(item.label);
-                    VideoWindow.Singleton.Grid.Children.Remove(item.image);
-                }
             }
             Rectangles = new List<RectText>();
         }
@@ -228,11 +197,6 @@ namespace Metayeg
             {
                 Singleton.ProjGrid.Children.Remove(label);
                 Singleton.ProjGrid.Children.Remove(image);
-            }
-            else if (Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
-            {
-                VideoWindow.Singleton.Grid.Children.Remove(label);
-                VideoWindow.Singleton.Grid.Children.Remove(image);
             }
             Rectangles.Remove(this);
             UpdateRectTextsLocations();
