@@ -445,17 +445,19 @@ namespace WpfApp1
             return (offset(inApp(corner1)), offset(inApp(corner2)));
 
         }
+        public static double scaleFactor = Screen.PrimaryScreen.Bounds.Width / SystemParameters.PrimaryScreenWidth;
         public (double, double) offset((double, double) a)
         {
             var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
             var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
-            return (a.Item1 + Math.Abs(topLeft.X - globaltopleft.X), a.Item2 + Math.Abs(topLeft.Y - globaltopleft.Y));
+            //var scaleFactor = Screen.PrimaryScreen.Bounds.Width / SystemParameters.PrimaryScreenWidth;
+            return (a.Item1 + Math.Abs(topLeft.X - globaltopleft.X)/scaleFactor, a.Item2 + Math.Abs(topLeft.Y - globaltopleft.Y)/scaleFactor);
         }
         public (double, double) offset2((double, double) a, bool reverse = false)
         {
             var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
             var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
-            var d = topLeft - globaltopleft - new Vector(10, 10);
+            var d = (topLeft - globaltopleft)/scaleFactor - new Vector(10, 10);
             return (a.Item1 + d.X * (reverse ? -1 : 1), a.Item2 + d.Y * (reverse ? -1 : 1));
         }
         private void DeleteLast(object sender, System.Windows.Input.KeyEventArgs e)
