@@ -22,6 +22,7 @@ using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.LinkLabel;
 using System.Windows.Forms.VisualStyles;
 using static System.Net.Mime.MediaTypeNames;
+using System.Diagnostics;
 
 
 namespace WpfApp1
@@ -287,24 +288,7 @@ namespace WpfApp1
             if (ImageObj.Shown != null)
             {
                 TryLoad();
-            }
-            if (ImageObj.Shown != null)
-            {
-                SidebarTitle.Content = ImageObj.Shown.name + ".txt";
-                int charcount = ImageObj.Shown.name.Length;
-                if (charcount < 22)
-                {
-                    SidebarTitle.FontSize = 14;
-                }
-                else if (charcount < 26)
-                {
-                    SidebarTitle.FontSize = 12;
-                }
-                else if (charcount < 31)
-                {
-                    SidebarTitle.FontSize = 10;
-                }
-
+                SetModifiedLabel(false);
             }
             else
             {
@@ -313,6 +297,40 @@ namespace WpfApp1
             UpdateImageCounter();
             //}
         }
+        public static bool ModifiedLabel = false;
+        public static void SetModifiedLabel(bool b)
+        {
+            if(b != ModifiedLabel)
+            {
+                ModifiedLabel = b;
+                
+            }
+            Singleton.UpdateSideBarTitle();
+        }
+
+        public void UpdateSideBarTitle()
+        {
+            string name = $"{(ModifiedLabel ? '*' : "")}{ImageObj.Shown.name}{".txt"}";
+            SidebarTitle.Content = name;
+            SidebarTitle.FontSize = 14;
+            int charcount = name.Length;
+            if(charcount > 30)
+            {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < 20; i++)
+                {
+                    sb.Append(name[i]);
+                }
+                sb.Append("...");
+                for(int i = name.Length - 10; i < name.Length; i++)
+                {
+                    sb.Append(name[i]);
+                }
+                
+                SidebarTitle.Content = sb.ToString();
+            }
+        }
+        
         public void TryLoad()
         {
             Dictionary<int, int>? transform = null;
@@ -381,18 +399,6 @@ namespace WpfApp1
                                         var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var Rect = new YOLORect(x, y, w, h, cls);
                                         AddRect(Rect);
-                                        /*
-                                        x *= Opened.Source.Width;
-                                        w *= Opened.Source.Width;
-                                        y *= Opened.Source.Height;
-                                        h *= Opened.Source.Height;
-
-
-                                        var corner1 = (x + w / 2, y + h / 2);
-                                        var corner2 = (x - w / 2, y - h / 2);
-                                        //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
-                                        BuildRectEXT(offset(inApp(corner1)), offset(inApp(corner2)), Rect);
-                                        */
 
                                     }
                                 }
@@ -407,15 +413,19 @@ namespace WpfApp1
 
             }
         }
-        public static void AddRect(YOLORect R)
+        public static void AddRect(YOLORect R, RectText? Obj = null)
         {
+            if(Obj == null)
+            {
+                SetModifiedLabel(true);
+            }
             var x = R.x * Singleton.Opened.Source.Width;
             var w = R.w * Singleton.Opened.Source.Width;
             var y = R.y * Singleton.Opened.Source.Height;
             var h = R.h * Singleton.Opened.Source.Height;
             var corner1 = (x + w / 2, y + h / 2);
             var corner2 = (x - w / 2, y - h / 2);
-            Singleton.BuildRectEXT(Singleton.offset(Singleton.inApp(corner1)), Singleton.offset(Singleton.inApp(corner2)), R);
+            Singleton.BuildRectEXT(Singleton.offset(Singleton.inApp(corner1)), Singleton.offset(Singleton.inApp(corner2)), R, Obj);
         }
         public ((double, double), (double, double)) YoloRectToCorners(YOLORect r)
         {
@@ -493,6 +503,7 @@ namespace WpfApp1
         public async void NextPrev(object sender, RoutedEventArgs e)
         {
             NextPrev(sender, e, false);
+            SetModifiedLabel(false);
         }
 
         public async void NextPrev(object sender, RoutedEventArgs e, bool DontSaveFlag = false)
@@ -502,8 +513,10 @@ namespace WpfApp1
             {
                 if (sender == NextButton)
                 {
-
-                    Export();
+                    if (AutoSave)
+                    {
+                        Export();
+                    }
                     ImageObj.ShownInt++;
                     if (DestroyOnNext)
                     {
@@ -512,7 +525,10 @@ namespace WpfApp1
                 }
                 else
                 {
-                    Export();
+                    if (AutoSave)
+                    {
+                        Export();
+                    }
                     RectText.DestroyAll();
                     ImageObj.ShownInt--;
                 }
@@ -541,6 +557,7 @@ namespace WpfApp1
                     SidebarTitle.Content = "";
                 }
                 UpdateImageCounter();
+                Singleton.UpdateSideBarTitle();
             }
         }
         private void SetSource(string path)
@@ -991,7 +1008,7 @@ namespace WpfApp1
         {
             setRectColor(CurrentRect, classes[CurrentClass].Item2.r, classes[CurrentClass].Item2.g, classes[CurrentClass].Item2.b, MARGINWIDTH, classes[CurrentClass].Item2.a);
             ResetLocations();
-
+            SetModifiedLabel(true);
             CurrentRect.MouseDown += ResetRect;
             CurrentRect.MouseEnter += RectMouseEnter;
             CurrentRect.MouseLeave += RectMouseLeave;
@@ -1057,6 +1074,7 @@ namespace WpfApp1
         }
         private void ResetRect(object sender, MouseButtonEventArgs e)
         {
+            SetModifiedLabel(true);
             //print(e.ChangedButton);
             if (e.ChangedButton == MouseButton.Left)
             {
@@ -1282,8 +1300,19 @@ namespace WpfApp1
             }
 
         }
+        public static bool AutoSave = true;
+        public void AutoSave_Click(object sender, RoutedEventArgs e)
+        {
+            AutoSave = !AutoSave;
+            ((System.Windows.Controls.CheckBox)sender).IsChecked = AutoSave;
+        }
         public void Export()
         {
+            if (!ModifiedLabel)
+            {
+                return;
+            }
+            SetModifiedLabel(false);
             if (PATH != "" && ImageObj.Shown != null)
             {
                 string folderPath = labelsFolder;
@@ -1312,7 +1341,7 @@ namespace WpfApp1
             }
 
         }
-        public static bool DestroyOnNext = false;
+        public static bool DestroyOnNext = true;
         private void Load_Checked(object sender, RoutedEventArgs e)
         {
             LoadLabel = !LoadLabel;
@@ -1325,26 +1354,25 @@ namespace WpfApp1
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             RectText.UpdateRectTextsLocations();
-            if (ImageObj.Shown == null)
+            var w = e.NewSize.Width;
+            var h = e.NewSize.Height;
+            var ratio = OriginalWindowSize.X / OriginalWindowSize.Y;
+            //print(h / OriginalWindowSize.Y);
+            if (w / h > ratio)
             {
-                var w = e.NewSize.Width;
-                var h = e.NewSize.Height;
-                var ratio = OriginalWindowSize.X / OriginalWindowSize.Y;
-                if (w / h > ratio)
-                {
-                    //height is smaller, use it
-                    var mult = h / OriginalWindowSize.Y;
-                    Opened.Width = OriginalImageSize.X * mult;
-                    Opened.Height = OriginalImageSize.Y * mult;
-                }
-                else
-                {
-                    var mult = w / OriginalWindowSize.X;
-                    Opened.Width = OriginalImageSize.X * mult;
-                    Opened.Height = OriginalImageSize.Y * mult;
-                }
-                //RectText.Regenerate();
+                //height is smaller, use it
+                var mult = h / OriginalWindowSize.Y;
+                Opened.Width = OriginalImageSize.X * mult;
+                Opened.Height = OriginalImageSize.Y * mult;
             }
+            else
+            {
+                var mult = w / OriginalWindowSize.X;
+                Opened.Width = OriginalImageSize.X * mult;
+                Opened.Height = OriginalImageSize.Y * mult;
+            }
+            RectText.Regenerate();
+
             // print(OriginalImageSize + "  " + OriginalWindowSize);
         }
         private void MainWindow_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)

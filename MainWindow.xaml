@@ -22,23 +22,52 @@
                 <MenuItem Header="Toggle Option">
                     <MenuItem.Template>
                         <ControlTemplate>
-                            <CheckBox Content="Load Labels" IsChecked="True" Checked="Load_Checked" Unchecked="Load_Checked" FontSize="12"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="" Width="33"/>
+                                <CheckBox Grid.Column="1" Content="Load Labels" IsChecked="True" Checked="Load_Checked" Unchecked="Load_Checked" FontSize="12" VerticalAlignment="Center"/>
+                            </Grid>
                         </ControlTemplate>
                     </MenuItem.Template>
                 </MenuItem>
-                <MenuItem  Header="Delete" Click="DeleteImage" FontSize="12" />
-
-                <MenuItem  Header="transform" FontSize="12" Name ="TransformMenu">
-                </MenuItem>
-            </MenuItem>
-            <MenuItem Header="Edit" FontSize="14">
-                <MenuItem Header="Delete All" Click="DeleteAllButtonFunction" FontSize="12"/>
                 <MenuItem Header="Toggle Option">
                     <MenuItem.Template>
                         <ControlTemplate>
-                            <CheckBox Content="Delete Previous" IsChecked="False" Checked="DestroyOnNextToggle" Unchecked="DestroyOnNextToggle" FontSize="12"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="" Width="33"/>
+                                <CheckBox Name ="AutoSaveCheckBox" Grid.Column="1" Content="Autosave" IsChecked="True" Checked="AutoSave_Click" Unchecked="AutoSave_Click" FontSize="12" VerticalAlignment="Center"/>
+                            </Grid>
                         </ControlTemplate>
                     </MenuItem.Template>
+                </MenuItem>
+                <MenuItem  Header="Delete Image" Click="DeleteImage" FontSize="12" />
+
+                
+            </MenuItem>
+            <MenuItem Header="Edit" FontSize="14">
+                <MenuItem Header="Clear Label" Click="DeleteAllButtonFunction" FontSize="12"/>
+                <MenuItem Header="Toggle Option">
+                    <MenuItem.Template>
+                        <ControlTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="" Width="33"/>
+                                <CheckBox Grid.Column="1" Content="Delete Previous" IsChecked="True" Checked="DestroyOnNextToggle" Unchecked="DestroyOnNextToggle" FontSize="12" VerticalAlignment="Center"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </MenuItem.Template>
+                </MenuItem>
+                <MenuItem  Header="transform" FontSize="12" Name ="TransformMenu">
                 </MenuItem>
                 <!--MenuItem Header="Zoom in" Click="OpenZoomWindow"/-->
             </MenuItem>

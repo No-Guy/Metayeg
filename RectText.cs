@@ -173,11 +173,14 @@ namespace Metayeg
             }
             Rectangles = new List<RectText>();
         }
-        public static void Regenerate()
+        public async static void Regenerate()
         {
+            await Task.Delay(10);
             foreach (var Rect in Rectangles)
             {
                 Singleton.ProjGrid.Children.Remove(Rect.image);
+                AddRect(Rect.Data, Rect);
+                /*
                 var offset = (0, 0);
                 var offset2 = (0,0);
                 
@@ -188,6 +191,7 @@ namespace Metayeg
                 Singleton.BuildRectEXT(cor1, cor2, Rect.Data, Rect);
                 Rect.Data.Cor1 = cor1;
                 Rect.Data.Cor2 = cor2;
+                */
             }
            // print(Rectangles.Count);
         }
@@ -213,7 +217,8 @@ namespace Metayeg
         }
         public void EditRect()
         {
-            if(Singleton.CurrentRect != null)
+            SetModifiedLabel(true);
+            if (Singleton.CurrentRect != null)
             {
                 Singleton.ResetLocations(false);
                 Singleton.DontSaveRect();
