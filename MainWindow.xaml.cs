@@ -36,6 +36,7 @@ namespace WpfApp1
         private DispatcherTimer timer;
         private DispatcherTimer Dragtimer;
         public static MainWindow Singleton;
+        public static double OpenedAspectRatio;
         public MainWindow()
         {
             InitializeComponent();
@@ -52,6 +53,7 @@ namespace WpfApp1
             timer.Tick += UpdateMouseHeld;
             Dragtimer.Interval = TimeSpan.FromMilliseconds(10);
             Dragtimer.Tick += UpdateDragRect;
+            OpenedAspectRatio = Opened.Width / Opened.Height;
             LoadLabel = true;
             //LoadLablingCB.IsChecked = true;
             OriginalImageSize = new Vector(Opened.Width, Opened.Height);
@@ -1353,23 +1355,26 @@ namespace WpfApp1
         //v2 changes//
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            RectText.UpdateRectTextsLocations();
             var w = e.NewSize.Width;
             var h = e.NewSize.Height;
+            RectText.UpdateRectTextsLocations();
             var ratio = OriginalWindowSize.X / OriginalWindowSize.Y;
-            //print(h / OriginalWindowSize.Y);
             if (w / h > ratio)
             {
                 //height is smaller, use it
-                var mult = h / OriginalWindowSize.Y;
-                Opened.Width = OriginalImageSize.X * mult;
-                Opened.Height = OriginalImageSize.Y * mult;
+                Opened.Height = OriginalImageSize.Y + (h - OriginalWindowSize.Y);
+                Opened.Width = Opened.Height * OpenedAspectRatio;//OriginalImageSize.X;
+                
             }
             else
             {
+                Opened.Width = OriginalImageSize.X + (w - OriginalWindowSize.X);
+                Opened.Height = Opened.Width / OpenedAspectRatio;//OriginalImageSize.X;
+                /*
                 var mult = w / OriginalWindowSize.X;
                 Opened.Width = OriginalImageSize.X * mult;
                 Opened.Height = OriginalImageSize.Y * mult;
+                */
             }
             RectText.Regenerate();
 
