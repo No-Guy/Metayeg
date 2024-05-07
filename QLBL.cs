@@ -59,7 +59,7 @@ namespace Metayeg
             bi.BeginInit();
             bi.UriSource = new Uri("pack://application:,,,/xcornc.png");
             bi.EndInit();
-            i.Source = ChangeImageColor(bi, new RectColor(255, 255, 255), classes[Class].Item2);
+            i.Source = ChangeImageColor(bi, new RectColor(255, 255, 255), classes[label_class].Item2);
             i.Name = "test_image";
             i.Width = 15;
             i.Height = 15;

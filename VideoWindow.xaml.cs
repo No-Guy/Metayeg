@@ -538,7 +538,7 @@ namespace Metayeg
                 int Destination = CurrentFrame;
                 if (int.TryParse(JumpInputBox.Text, out Destination))
                 {
-                    if (Destination > 0 && Destination < FrameCount)
+                    if (Destination >= 0 && Destination < FrameCount)
                     {
                         Seek(Destination);
                     }

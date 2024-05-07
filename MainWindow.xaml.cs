@@ -96,7 +96,6 @@ namespace WpfApp1
             {
                 return $"{(int)c} {Math.Round(x, 4)} {Math.Round(y, 4)} {Math.Round(w, 4)} {Math.Round(h, 4)}";
             }
-
         }
         public struct RectColor
         {
@@ -271,7 +270,7 @@ namespace WpfApp1
             PATH = null;
             vw.Show();
         }
-            private async void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
             //PathLabel.Content = "aaa";
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
@@ -347,6 +346,7 @@ namespace WpfApp1
                 }
             }
             */
+
             if (Tranforms.TransformEnabled)
             {
                 transform = Tranforms.CreatedTransform;
@@ -362,11 +362,11 @@ namespace WpfApp1
                         using (StreamReader reader = new StreamReader(Path))
                         {
                             string line;
-                            
+
                             while ((line = reader.ReadLine()) != null)
                             {
                                 var parts = line.Split(" ");
-                                
+
                                 if (parts.Length == 5)
                                 {
                                     if (int.TryParse(parts[0], out int cls) && double.TryParse(parts[1], out double x) && double.TryParse(parts[2], out double y) && double.TryParse(parts[3], out double w) && double.TryParse(parts[4], out double h))
@@ -385,9 +385,12 @@ namespace WpfApp1
                                                 }
                                             }
                                         }
+
                                         var topLeft = Opened.PointToScreen(new System.Windows.Point(0, 0));
                                         var globaltopleft = ProjGrid.PointToScreen(new System.Windows.Point(0, 0));
                                         var Rect = new YOLORect(x, y, w, h, cls);
+                                        AddRect(Rect);
+                                        /*
                                         x *= Opened.Source.Width;
                                         w *= Opened.Source.Width;
                                         y *= Opened.Source.Height;
@@ -398,6 +401,7 @@ namespace WpfApp1
                                         var corner2 = (x - w / 2, y - h / 2);
                                         //System.Windows.MessageBox.Show($"{globaltopleft.X - topLeft.X},{globaltopleft.Y - topLeft.Y}");
                                         BuildRectEXT(offset(inApp(corner1)), offset(inApp(corner2)), Rect);
+                                        */
 
                                     }
                                 }
@@ -405,12 +409,22 @@ namespace WpfApp1
                             }
                         }
                     }
-                    catch(Exception ex){
+                    catch (Exception ex) {
                         print(ex);
                     }
                 }
 
             }
+        }
+        public static void AddRect(YOLORect R)
+        {
+            var x = R.x * Singleton.Opened.Source.Width;
+            var w = R.w * Singleton.Opened.Source.Width;
+            var y = R.y * Singleton.Opened.Source.Height;
+            var h = R.h * Singleton.Opened.Source.Height;
+            var corner1 = (x + w / 2, y + h / 2);
+            var corner2 = (x - w / 2, y - h / 2);
+            Singleton.BuildRectEXT(Singleton.offset(Singleton.inApp(corner1)), Singleton.offset(Singleton.inApp(corner2)), R);
         }
         public ((double, double), (double, double)) YoloRectToCorners(YOLORect r)
         {
@@ -461,14 +475,19 @@ namespace WpfApp1
             {
                 DeleteImage(null, null);
             }
-
-            if (e.Key == Key.D)
+          
+            if (e.Key == Key.D || e.Key == Key.Right)
             {
                 NextPrev(NextButton, null);
             }
-            if (e.Key == Key.A)
+            if (e.Key == Key.A || e.Key == Key.Left)
             {
                 NextPrev(PreviousButton, null);
+            }
+            if(e.Key >= (Key)34 && e.Key <= (Key)43)
+            {
+                int newcls = (int)e.Key - 34;
+                ChangeClass(newcls);
             }
             if (e.Key == Key.Return && Class_TextBox.IsFocused)
             {
@@ -478,6 +497,7 @@ namespace WpfApp1
                 // OR, set focus to the main window
                 //System.Windows.Application.Current.MainWindow.Focus();
             }
+            
         }
         public async void NextPrev(object sender, RoutedEventArgs e)
         {
@@ -1258,6 +1278,11 @@ namespace WpfApp1
                 if (c > 0)
                 {
                     print($"Missing {c} Labels, first in {first + 1}");
+                    if (first + 1 >= 0 && first + 1 < ImageObj.Images.Count)
+                    {
+                        ImageObj.ShownInt = first + 1;
+                        NextPrev(PreviousButton, null);
+                    }
                 }
                 else
                 {

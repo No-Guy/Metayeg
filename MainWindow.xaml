@@ -10,6 +10,8 @@
         KeyDown="DeleteLast"
         Title="Metayeg" Height="1080" Width="1920" SizeChanged="MainWindow_SizeChanged" PreviewMouseWheel="MainWindow_PreviewMouseWheel">
     <Grid x:Name="ProjGrid" MouseUp="GenericMouseUp">
+
+        <Label Content="" Name="LoadingPython" VerticalContentAlignment ="Center" HorizontalContentAlignment ="Center" HorizontalAlignment="Center" Height="110" VerticalAlignment="Center" Width="496" Panel.ZIndex="4" IsHitTestVisible ="False" FontSize="50" FontWeight="Bold"/>
         <Menu >
             <MenuItem Header="File" FontSize="14" Click="AddTransform">
 
@@ -17,7 +19,7 @@
                 <MenuItem  Header="Load Video" Click="SetVideo" FontSize="12" />
                 <MenuItem  Header="Save" Click="Export" FontSize="12" />
                 <MenuItem  Header="Check Consistency" Click="CheckConsistency" FontSize="12" />
-                
+
                 <MenuItem Header="Toggle Option">
                     <MenuItem.Template>
                         <ControlTemplate>

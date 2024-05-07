@@ -9,9 +9,9 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<ApplicationIcon>icon.ico</ApplicationIcon>
-	<AssemblyVersion>1.13</AssemblyVersion>
-	<FileVersion>1.13</FileVersion>
-	<Version>1.13</Version>
+	<AssemblyVersion>2.2</AssemblyVersion>
+	<FileVersion>2.2</FileVersion>
+	<Version>2.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
