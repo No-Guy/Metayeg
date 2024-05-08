@@ -462,7 +462,7 @@ namespace WpfApp1
         }
         private void DeleteLast(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
+            if (e.Key == Key.Escape || e.Key == Key.Back)
             {
                 if (CurrentID > 0)
                 {
@@ -660,6 +660,17 @@ namespace WpfApp1
                 CurrentRect.IsHitTestVisible = SelectedID == -1;
             }
 
+        }
+        private void DeleteLabelFile(object sender, RoutedEventArgs e)
+        {
+            string folderPath = labelsFolder;
+            string OriginalName = ImageObj.Shown.name;
+            string labelFilepath = System.IO.Path.Combine(folderPath, OriginalName + ".txt");
+            if(System.IO.Path.Exists(folderPath) && System.IO.Path.Exists(labelFilepath))
+            {
+                File.Delete(labelFilepath);
+            }
+            SetModifiedLabel(true);
         }
         public static void print(object message)
         {

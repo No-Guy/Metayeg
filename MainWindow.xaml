@@ -48,7 +48,7 @@
                     </MenuItem.Template>
                 </MenuItem>
                 <MenuItem  Header="Delete Image" Click="DeleteImage" FontSize="12" />
-
+                <MenuItem  Header="Delete Label" Click="DeleteLabelFile" FontSize="12" />
                 
             </MenuItem>
             <MenuItem Header="Edit" FontSize="14">
