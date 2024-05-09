@@ -16,6 +16,8 @@ namespace Metayeg
         public string name;
 
         public bool isYolo;
+
+        public bool isPreprocessed;
         public static void GenerateNetworks(RectText.Window w = RectText.Window.MainWindow)
         {
             networks = new List<Network>();
@@ -32,12 +34,20 @@ namespace Metayeg
 
                         n.name = name;
                         n.isYolo = (n.name[0] == 'Y' && n.name[1] == '_');
+                        n.isPreprocessed = n.name[n.name.Length - 4] == 'p';
                         //MessageBox.Show(n.isYolo.ToString());
                         networks.Add(n);
                         MenuItem newItem = new MenuItem();
                         if (n.isYolo)
                         {
-                            newItem.Header = $"{(name.Split('.')[0]).Split('_')[1]} (Yolo)";
+                            if (!n.isPreprocessed)
+                            {
+                                newItem.Header = $"{(name.Split('.')[0]).Split('_')[1]} (Yolo)";
+                            }
+                            else
+                            {
+                                newItem.Header = $"{(name.Split('.')[0]).Split('_')[1]} (P-Yolo)";
+                            }
                         }
                         else
                         {
