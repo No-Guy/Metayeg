@@ -7,6 +7,7 @@
         Closing="MainWindow_Closing"
         mc:Ignorable="d"
         MouseUp="GenericMouseUp"
+        MouseDown="GenericMouseDown"
         KeyDown="DeleteLast"
         Title="Metayeg" Height="1080" Width="1920" SizeChanged="MainWindow_SizeChanged" PreviewMouseWheel="MainWindow_PreviewMouseWheel">
     <Grid x:Name="ProjGrid" MouseUp="GenericMouseUp">

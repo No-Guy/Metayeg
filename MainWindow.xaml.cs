@@ -779,7 +779,24 @@ namespace WpfApp1
             {
                 Opened_MouseUp(sender, e);
             }
+            
         }
+
+        private void GenericMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                EditMode.IsChecked = !EditMode.IsChecked;
+                if (EditMode.IsChecked != null && (bool)EditMode.IsChecked)
+                {
+                    EnableEditMode(null, null);
+                }
+                else
+                {
+                    DisableEditMode(null, null);
+                }
+            }
+        } 
         private (double, double) StartingDragLocation;
         private void DragStart(object sender, MouseButtonEventArgs e)
         {
@@ -1249,6 +1266,7 @@ namespace WpfApp1
         {
             try
             {
+                StringBuilder sb = new StringBuilder();
                 string[] files = Directory.GetFiles(labelsFolder);
                 HashSet<string> todelete = new HashSet<string>();
                 int c = 0;
@@ -1274,11 +1292,11 @@ namespace WpfApp1
                 }
                 if (c == 0)
                 {
-                    print("All Labels are paired");
+                    sb.Append("All Labels are paired\n");
                 }
                 else
                 {
-                    print($"Deleted {c} unpaired Labels");
+                    sb.Append($"Deleted {c} unpaired Labels\n");
                 }
                 int first = -1;
                 c = 0;
@@ -1297,7 +1315,7 @@ namespace WpfApp1
                 }
                 if (c > 0)
                 {
-                    print($"Missing {c} Labels, first in {first + 1}");
+                    sb.Append($"Missing {c} Labels, first in {first + 1}");
                     if (first + 1 >= 0 && first + 1 < ImageObj.Images.Count)
                     {
                         ImageObj.ShownInt = first + 1;
@@ -1306,8 +1324,9 @@ namespace WpfApp1
                 }
                 else
                 {
-                    print($"All Images are paired");
+                    sb.Append($"All Images are paired");
                 }
+                print(sb.ToString());
             }
             catch
             {
