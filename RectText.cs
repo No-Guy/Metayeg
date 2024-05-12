@@ -151,13 +151,16 @@ namespace Metayeg
         }
         public static int GetCount()
         {
-            if (Rectangles[0].origin == Window.MainWindow)
+            if (Rectangles != null && Rectangles.Count > 0)
             {
-                return (int)((System.Windows.Application.Current.MainWindow.Height - 65) / 30);
-            }
-            else if(Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
-            {
-                return (int)((System.Windows.Application.Current.MainWindow.Height - 80) / 30);
+                if (Rectangles[0].origin == Window.MainWindow)
+                {
+                    return (int)((System.Windows.Application.Current.MainWindow.Height - 65) / 30);
+                }
+                else if (Rectangles[0].origin == Window.VideoWindowRight || Rectangles[0].origin == Window.VideoWindowLeft)
+                {
+                    return (int)((System.Windows.Application.Current.MainWindow.Height - 80) / 30);
+                }
             }
             return 100;
         }
